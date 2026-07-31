@@ -97,3 +97,7 @@ def test_history():
         } for r in results
     ]
     return jsonify(history_data)
+
+@main_bp.route('/settings')
+def settings():
+    return render_template('settings.html')

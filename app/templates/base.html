@@ -12,14 +12,14 @@
                 extend: {
                     colors: {
                         brand: {
-                            bg: '#0a0a0f',        // Deep obsidian background
-                            panel: '#12121e',     // Slate panel background
-                            accent: '#8b5cf6',    // Electric purple primary
-                            accentLight: '#a78bfa',
-                            success: '#10b981',   // Emerald green for correct characters
-                            error: '#f43f5e',     // Rose red for errors
-                            text: '#f1f5f9',      // White slate text
-                            textMuted: '#64748b'  // Dim grey text
+                            bg: 'var(--color-bg)',
+                            panel: 'var(--color-panel)',
+                            accent: 'var(--color-accent)',
+                            accentLight: 'var(--color-accent-light)',
+                            success: 'var(--color-success)',
+                            error: 'var(--color-error)',
+                            text: 'var(--color-text)',
+                            textMuted: 'var(--color-muted)'
                         }
                     },
                     fontFamily: {
@@ -33,34 +33,51 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&family=Roboto+Mono:wght@300;400;500;700&family=Fira+Code:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400..700;1,400..700&family=Source+Code+Pro:wght@300;400;500;700&family=Inconsolata:wght@300;400;500;700&family=Space+Mono:wght@400;700&family=Courier+Prime:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500;700&family=Ubuntu+Mono:wght@400;700&family=Anonymous+Pro:wght@400;700&family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=Lexend+Deca:wght@300;400;500;700&family=Montserrat:wght@300;400;500;700&family=Poppins:wght@300;400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Merriweather:wght@300;400;700&family=Special+Elite&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
+        /* CSS Theme Custom Variables (Carbon/Default theme init) */
+        :root {
+            --color-bg: #0a0a0f;
+            --color-panel: #12121eef;
+            --color-accent: #8b5cf6;
+            --color-accent-light: #a78bfa;
+            --color-accent-glow: #8b5cf624;
+            --color-success: #10b981;
+            --color-error: #f43f5e;
+            --color-text: #f1f5f9;
+            --color-muted: #64748b;
+            --color-border: #ffffff0e;
+            --color-scroll-thumb: #ffffff18;
+            --font-typing: 'JetBrains Mono', monospace;
+            --word-spacing: 0.8em;
+        }
+
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #0a0a0f;
+            background: var(--color-bg);
         }
         ::-webkit-scrollbar-thumb {
-            background: #27273a;
+            background: var(--color-scroll-thumb);
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #3f3f56;
+            background: var(--color-accent);
         }
         /* Custom glow styles */
         .glass-panel {
-            background: rgba(18, 18, 30, 0.7);
+            background: var(--color-panel);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--color-border);
         }
         .glow-accent {
-            box-shadow: 0 0 25px -5px rgba(139, 92, 246, 0.4);
+            box-shadow: 0 0 25px -5px var(--color-accent-glow);
         }
     </style>
     {% block head %}{% endblock %}
@@ -72,7 +89,7 @@
 
     <!-- Navigation Header -->
     <header class="sticky top-0 z-50 w-full transition-all duration-300 border-b border-white/5 bg-brand-bg/80 backdrop-blur-md">
-        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div class="max-w-screen-xl mx-auto px-[1vw] h-16 flex items-center justify-between">
             <!-- Logo -->
             <a href="{{ url_for('main.index') }}" class="flex items-center space-x-3 group">
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-accent to-indigo-500 flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-105 transition-all duration-200">
@@ -85,26 +102,47 @@
             </a>
 
             <!-- Navigation Links -->
-            <nav class="hidden md:flex items-center space-x-1">
-                <a href="{{ url_for('main.index') }}" class="px-4 py-2 rounded-lg text-sm font-medium transition-all {% if request.endpoint == 'main.index' %}text-brand-accent bg-brand-accent/10{% else %}text-brand-textMuted hover:text-white hover:bg-white/5{% endif %}">
-                    <i class="fa-solid fa-play mr-2"></i>Test
+            <nav class="hidden md:flex items-center space-x-2">
+                <!-- Test Button -->
+                <a href="{{ url_for('main.index') }}" class="group relative w-10 h-10 rounded-xl flex items-center justify-center transition-all {% if request.endpoint == 'main.index' %}text-brand-accent bg-brand-accent/10 border border-brand-accent/15{% else %}text-brand-textMuted hover:text-white hover:bg-white/5 border border-transparent{% endif %}">
+                    <i class="fa-solid fa-play text-md"></i>
+                    <span class="absolute top-12 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-all duration-150 origin-top bg-brand-panel text-white text-[10px] font-semibold px-2.5 py-1.5 rounded-xl border border-white/5 shadow-xl whitespace-nowrap z-50 pointer-events-none">
+                        Typing Test
+                    </span>
                 </a>
+                
                 {% if current_user.is_authenticated %}
-                <a href="{{ url_for('main.dashboard') }}" class="px-4 py-2 rounded-lg text-sm font-medium transition-all {% if request.endpoint == 'main.dashboard' %}text-brand-accent bg-brand-accent/10{% else %}text-brand-textMuted hover:text-white hover:bg-white/5{% endif %}">
-                    <i class="fa-solid fa-chart-line mr-2"></i>Dashboard
+                <!-- Dashboard Button -->
+                <a href="{{ url_for('main.dashboard') }}" class="group relative w-10 h-10 rounded-xl flex items-center justify-center transition-all {% if request.endpoint == 'main.dashboard' %}text-brand-accent bg-brand-accent/10 border border-brand-accent/15{% else %}text-brand-textMuted hover:text-white hover:bg-white/5 border border-transparent{% endif %}">
+                    <i class="fa-solid fa-chart-line text-md"></i>
+                    <span class="absolute top-12 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-all duration-150 origin-top bg-brand-panel text-white text-[10px] font-semibold px-2.5 py-1.5 rounded-xl border border-white/5 shadow-xl whitespace-nowrap z-50 pointer-events-none">
+                        Dashboard
+                    </span>
                 </a>
                 {% endif %}
             </nav>
 
             <!-- Authentication Controls -->
             <div class="flex items-center space-x-3">
+                <!-- Settings Button -->
+                <a href="{{ url_for('main.settings') }}" class="group relative w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center justify-center text-brand-textMuted hover:text-white transition-all cursor-pointer" title="">
+                    <i class="fa-solid fa-gear text-md"></i>
+                    <span class="absolute top-12 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-all duration-150 origin-top bg-brand-panel text-white text-[10px] font-semibold px-2.5 py-1.5 rounded-xl border border-white/5 shadow-xl whitespace-nowrap z-50 pointer-events-none">
+                        Preferences
+                    </span>
+                </a>
+
                 {% if current_user.is_authenticated %}
                 <div class="flex items-center space-x-3 bg-white/5 pl-3 pr-2 py-1.5 rounded-full border border-white/5">
                     <span class="text-xs font-semibold text-brand-accentLight">
                         <i class="fa-regular fa-user mr-1.5"></i>{{ current_user.username }}
                     </span>
-                    <a href="{{ url_for('auth.logout') }}" class="px-3 py-1 bg-white/10 hover:bg-brand-error/20 hover:text-brand-error rounded-full text-xs font-semibold transition-all duration-200" title="Logout">
-                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <!-- Logout Button -->
+                    <a href="{{ url_for('auth.logout') }}" class="group relative w-7 h-7 bg-white/10 hover:bg-brand-error/20 hover:text-brand-error rounded-full flex items-center justify-center transition-all" title="">
+                        <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+                        <span class="absolute top-9 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-all duration-150 origin-top bg-brand-panel text-white text-[10px] font-semibold px-2.5 py-1.5 rounded-xl border border-white/5 shadow-xl whitespace-nowrap z-50 pointer-events-none">
+                            Logout
+                        </span>
                     </a>
                 </div>
                 {% else %}
@@ -120,7 +158,7 @@
     </header>
 
     <!-- Flash Messages Container -->
-    <div class="max-w-6xl mx-auto w-full px-4 mt-4">
+    <div class="max-w-screen-xl mx-auto w-full px-[1vw] mt-4">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -137,13 +175,13 @@
     </div>
 
     <!-- Main Content -->
-    <main class="flex-grow flex flex-col max-w-6xl mx-auto w-full px-4 py-6">
+    <main class="flex-grow flex flex-col max-w-screen-xl mx-auto w-full px-[1vw] py-6">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
     <footer class="w-full py-6 mt-12 border-t border-white/5 bg-[#07070a]/90 text-brand-textMuted">
-        <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between text-xs space-y-4 md:space-y-0">
+        <div class="max-w-screen-xl mx-auto px-[1vw] flex flex-col md:flex-row items-center justify-between text-xs space-y-4 md:space-y-0">
             <div class="flex items-center space-x-1">
                 <span>&copy; 2026 TypoPulse. Designed for portfolios.</span>
             </div>
@@ -153,6 +191,95 @@
             </div>
         </div>
     </footer>
+
+    <!-- Global Preferences Manager Script -->
+    <script>
+        const GLOBAL_THEMES = {
+            'monkeytype': { name: 'Monkeytype (Default)', bg: '#323437', panel: '#2c2e31ef', accent: '#e2b714', accentLight: '#e2b71424', accentGlow: '#e2b71420', success: '#d1d0c5', error: '#ca4754', text: '#d1d0c5', muted: '#646669', border: '#ffffff0d', scrollThumb: '#ffffff18' },
+            'dracula': { name: 'Dracula', bg: '#282a36', panel: '#1d1f27ef', accent: '#bd93f9', accentLight: '#ff79c6', accentGlow: '#bd93f920', success: '#50fa7b', error: '#ff5555', text: '#f8f8f2', muted: '#6272a4', border: '#ffffff0d', scrollThumb: '#ffffff18' },
+            'nord': { name: 'Nord', bg: '#2e3440', panel: '#242933ef', accent: '#88c0d0', accentLight: '#81a1c1', accentGlow: '#88c0d020', success: '#a3be8c', error: '#bf616a', text: '#d8dee9', muted: '#4c566a', border: '#ffffff0d', scrollThumb: '#ffffff18' },
+            'bento': { name: 'Bento', bg: '#2d3142', panel: '#202330ef', accent: '#ef8354', accentLight: '#ef835424', accentGlow: '#ef835420', success: '#4f5d75', error: '#df3b57', text: '#bfc0c0', muted: '#4f5d75', border: '#ffffff0d', scrollThumb: '#ffffff18' },
+            'cyberpunk': { name: 'Cyberpunk', bg: '#18191e', panel: '#111216ef', accent: '#ff0055', accentLight: '#00ffaa', accentGlow: '#ff005520', success: '#00ffaa', error: '#ff0055', text: '#e2e4e9', muted: '#5e657c', border: '#ffffff0d', scrollThumb: '#ffffff18' },
+            'carbon': { name: 'Carbon', bg: '#161616', panel: '#262626ef', accent: '#f66e0d', accentLight: '#f66e0d24', accentGlow: '#f66e0d20', success: '#39b54a', error: '#ff3333', text: '#f5e6c8', muted: '#616161', border: '#ffffff0d', scrollThumb: '#ffffff18' },
+            'gruvbox-dark': { name: 'Gruvbox Dark', bg: '#282828', panel: '#1d2021ef', accent: '#d79921', accentLight: '#d7992124', accentGlow: '#d7992120', success: '#b8bb26', error: '#fb4934', text: '#ebdbb2', muted: '#928374', border: '#ffffff0d', scrollThumb: '#ffffff18' },
+            'matrix': { name: 'Matrix', bg: '#000000', panel: '#080808ef', accent: '#15ff00', accentLight: '#15ff0024', accentGlow: '#15ff0020', success: '#00ff00', error: '#ff0000', text: '#15ff00', muted: '#003300', border: '#15ff0015', scrollThumb: '#15ff0025' },
+            'rose-pine': { name: 'Rose Pine', bg: '#191724', panel: '#1f1d2eef', accent: '#ebbcba', accentLight: '#f6c177', accentGlow: '#ebbcba20', success: '#31748f', error: '#eb6f92', text: '#e0def4', muted: '#908caa', border: '#ffffff0d', scrollThumb: '#ffffff18' },
+            'one-dark': { name: 'One Dark', bg: '#282c34', panel: '#21252bef', accent: '#61afef', accentLight: '#abb2bf', accentGlow: '#61afef20', success: '#98c379', error: '#e06c75', text: '#abb2bf', muted: '#5c6370', border: '#ffffff0d', scrollThumb: '#ffffff18' }
+        };
+
+        // Apply Theme function
+        function applyGlobalTheme(themeId) {
+            const theme = GLOBAL_THEMES[themeId] || GLOBAL_THEMES['monkeytype']; // fallback
+            const root = document.documentElement;
+            
+            root.style.setProperty('--color-bg', theme.bg);
+            root.style.setProperty('--color-panel', theme.panel);
+            root.style.setProperty('--color-accent', theme.accent);
+            root.style.setProperty('--color-accent-light', theme.accentLight);
+            root.style.setProperty('--color-accent-glow', theme.accentGlow);
+            root.style.setProperty('--color-success', theme.success);
+            root.style.setProperty('--color-error', theme.error);
+            root.style.setProperty('--color-text', theme.text);
+            root.style.setProperty('--color-muted', theme.muted);
+            root.style.setProperty('--color-border', theme.border);
+            root.style.setProperty('--color-scroll-thumb', theme.scrollThumb);
+            
+            localStorage.setItem('typopulse-theme', themeId);
+        }
+
+        // Initialize User Prefs
+        const initTheme = localStorage.getItem('typopulse-theme') || 'monkeytype';
+        applyGlobalTheme(initTheme);
+
+        const FONT_FAMILIES = {
+            'jetbrains-mono': { name: 'JetBrains Mono', family: "'JetBrains Mono', monospace", category: 'mono' },
+            'fira-code': { name: 'Fira Code', family: "'Fira Code', monospace", category: 'mono' },
+            'roboto-mono': { name: 'Roboto Mono', family: "'Roboto Mono', monospace", category: 'mono' },
+            'source-code-pro': { name: 'Source Code Pro', family: "'Source Code Pro', monospace", category: 'mono' },
+            'inconsolata': { name: 'Inconsolata', family: "'Inconsolata', monospace", category: 'mono' },
+            'space-mono': { name: 'Space Mono', family: "'Space Mono', monospace", category: 'mono' },
+            'courier-prime': { name: 'Courier Prime', family: "'Courier Prime', monospace", category: 'mono' },
+            'ibm-plex-mono': { name: 'IBM Plex Mono', family: "'IBM Plex Mono', monospace", category: 'mono' },
+            'ubuntu-mono': { name: 'Ubuntu Mono', family: "'Ubuntu Mono', monospace", category: 'mono' },
+            'anonymous-pro': { name: 'Anonymous Pro', family: "'Anonymous Pro', monospace", category: 'mono' },
+            'outfit': { name: 'Outfit', family: "'Outfit', sans-serif", category: 'sans' },
+            'inter': { name: 'Inter', family: "'Inter', sans-serif", category: 'sans' },
+            'roboto': { name: 'Roboto', family: "'Roboto', sans-serif", category: 'sans' },
+            'lexend-deca': { name: 'Lexend Deca', family: "'Lexend Deca', sans-serif", category: 'sans' },
+            'montserrat': { name: 'Montserrat', family: "'Montserrat', sans-serif", category: 'sans' },
+            'poppins': { name: 'Poppins', family: "'Poppins', sans-serif", category: 'sans' },
+            'plus-jakarta': { name: 'Plus Jakarta Sans', family: "'Plus Jakarta Sans', sans-serif", category: 'sans' },
+            'playfair': { name: 'Playfair Display', family: "'Playfair Display', serif", category: 'serif' },
+            'merriweather': { name: 'Merriweather', family: "'Merriweather', serif", category: 'serif' },
+            'special-elite': { name: 'Special Elite', family: "'Special Elite', cursive, serif", category: 'serif' },
+            'lora': { name: 'Lora', family: "'Lora', serif", category: 'serif' }
+        };
+
+        function applyGlobalFont(fontId) {
+            const fontObj = FONT_FAMILIES[fontId] || FONT_FAMILIES['jetbrains-mono'];
+            document.documentElement.style.setProperty('--font-typing', fontObj.family);
+            localStorage.setItem('typopulse-font', fontId);
+        }
+
+        const initFont = localStorage.getItem('typopulse-font') || 'jetbrains-mono';
+        applyGlobalFont(initFont);
+
+        const SPACING_MAP = {
+            'compact': '0.5em',
+            'normal': '0.8em',
+            'wide': '1.2em',
+            'extra-wide': '1.6em'
+        };
+
+        function applyGlobalSpacing(spacingId) {
+            const spacingVal = SPACING_MAP[spacingId] || SPACING_MAP['normal'];
+            document.documentElement.style.setProperty('--word-spacing', spacingVal);
+            localStorage.setItem('typopulse-spacing', spacingId);
+        }
+
+        const initSpacing = localStorage.getItem('typopulse-spacing') || 'normal';
+        applyGlobalSpacing(initSpacing);
+    </script>
 
     {% block scripts %}{% endblock %}
 </body>

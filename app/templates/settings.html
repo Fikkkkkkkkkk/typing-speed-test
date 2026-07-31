@@ -1,0 +1,577 @@
+{% extends "base.html" %}
+
+{% block title %}Preferences - TypoPulse{% endblock %}
+
+{% block head %}
+<style>
+    /* Caret Preview Animations */
+    #caret-preview-cursor.blinking {
+        animation: caretBlink 1s infinite;
+    }
+    #caret-preview-cursor.caret-block {
+        opacity: 0.35;
+        box-shadow: none;
+        border-radius: 1px;
+    }
+    #caret-preview-cursor.caret-underline {
+        box-shadow: 0 0 5px var(--color-accent);
+    }
+    .caret-preview-letter {
+        position: relative;
+        display: inline-block;
+    }
+    @keyframes caretBlink {
+        0%, 100% { opacity: 0.15; }
+        50% { opacity: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8 py-4">
+    <!-- Header (Matching Dashboard Layout) -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight text-white mb-1">Settings</h1>
+            <p class="text-brand-textMuted text-sm">Configure your personal typing experience, visual themes, and sound feedback</p>
+        </div>
+        <div>
+            <a href="{{ url_for('main.index') }}" class="px-4 py-2.5 bg-brand-accent hover:bg-brand-accentLight text-white text-sm font-semibold rounded-xl transition-all duration-200 shadow-md shadow-brand-accent/25 hover:shadow-brand-accent/40 active:scale-[0.98]">
+                <i class="fa-solid fa-play mr-2"></i>Back to Test
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Settings Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Left Sidebar Navigation -->
+        <div class="lg:col-span-1 space-y-4">
+            <div class="glass-panel p-4 rounded-2xl border border-white/5 space-y-4">
+                <!-- Group 1: Test Behavior -->
+                <div>
+                    <span class="block text-[10px] font-semibold uppercase tracking-wider text-brand-textMuted px-3 mb-2.5">test behavior</span>
+                    <div class="space-y-1">
+                        <a href="#caret-section" class="sidebar-link flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-brand-textMuted hover:text-white hover:bg-white/5 transition-all">
+                            <i class="fa-solid fa-i-cursor text-sm w-4 text-center"></i>
+                            <span>Caret Style</span>
+                        </a>
+                        <a href="#font-section" class="sidebar-link flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-brand-textMuted hover:text-white hover:bg-white/5 transition-all">
+                            <i class="fa-solid fa-font text-sm w-4 text-center"></i>
+                            <span>Font Style</span>
+                        </a>
+                        <a href="#sound-section" class="sidebar-link flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-brand-textMuted hover:text-white hover:bg-white/5 transition-all">
+                            <i class="fa-solid fa-volume-high text-sm w-4 text-center"></i>
+                            <span>Keystroke Audio</span>
+                        </a>
+                        <a href="#spacing-section" class="sidebar-link flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-brand-textMuted hover:text-white hover:bg-white/5 transition-all">
+                            <i class="fa-solid fa-arrows-left-right text-sm w-4 text-center"></i>
+                            <span>Word Spacing</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Group 2: System Settings -->
+                <div>
+                    <span class="block text-[10px] font-semibold uppercase tracking-wider text-brand-textMuted px-3 mb-2.5">system settings</span>
+                    <div class="space-y-1">
+                        <a href="#theme-section" class="sidebar-link flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-brand-textMuted hover:text-white hover:bg-white/5 transition-all">
+                            <i class="fa-solid fa-palette text-sm w-4 text-center"></i>
+                            <span>Theme</span>
+                        </a>
+                        <a href="#danger-section" class="sidebar-link flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-brand-textMuted hover:text-white hover:bg-white/5 transition-all">
+                            <i class="fa-solid fa-triangle-exclamation text-sm w-4 text-center"></i>
+                            <span>Danger Zone</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-panel p-4 rounded-2xl border border-white/5 text-center text-xs text-brand-textMuted space-y-1.5">
+                <i class="fa-solid fa-circle-question text-brand-accent text-sm animate-pulse"></i>
+                <span class="block font-semibold text-white">Keyboard Shortcuts</span>
+                <span class="block text-[10px]">Press <kbd class="px-1.5 py-0.5 rounded bg-white/10 font-mono text-white text-[9px] border border-white/10">Esc</kbd> on this page to quickly return to your test.</span>
+            </div>
+        </div>
+
+        <!-- Right Main Content Panel -->
+        <div class="lg:col-span-3 space-y-6">
+            
+            <!-- ======================================= -->
+            <!-- CATEGORY: TEST BEHAVIOR                 -->
+            <!-- ======================================= -->
+
+            <!-- Caret Style Settings Section -->
+            <div id="caret-section" class="glass-panel p-6 rounded-2xl border border-white/5">
+                <!-- Header with Title & Right-Aligned Live Preview -->
+                <div class="flex justify-between items-center border-b border-white/5 pb-4 mb-4">
+                    <div>
+                        <h3 class="text-xs font-mono uppercase tracking-widest text-brand-accentLight flex items-center gap-2">
+                            <i class="fa-solid fa-i-cursor"></i>caret style
+                        </h3>
+                    </div>
+                    <!-- Small Capsule Preview -->
+                    <div class="px-3.5 py-1.5 bg-[#0b0b11]/30 border border-white/5 rounded-xl flex items-center h-9 select-none overflow-hidden relative">
+                        <div class="relative text-sm">
+                            <!-- Caret Preview Cursor -->
+                            <div id="caret-preview-cursor" class="absolute w-[2px] bg-brand-accent blinking" style="left: 0; top: 0; height: 20px;"></div>
+                            <!-- Caret Preview Text (cursor on letter 'a') -->
+                            <div class="caret-preview-text text-brand-text font-normal opacity-95 transition-all select-none" id="caret-preview-text-el" style="font-family: var(--font-typing);">
+                                <span class="caret-preview-letter text-brand-accent">c</span><span class="caret-preview-letter">a</span><span class="caret-preview-letter">r</span><span class="caret-preview-letter">e</span><span class="caret-preview-letter">t</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="text-xs text-brand-textMuted mb-6">choose the cursor layout shape rendered over active typing letters.</p>
+                
+                <div class="flex flex-wrap gap-2.5">
+                    <button class="caret-pill px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer" data-caret="line">Line</button>
+                    <button class="caret-pill px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer" data-caret="block">Block</button>
+                    <button class="caret-pill px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer" data-caret="underline">Underline</button>
+                    <button class="caret-pill px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer" data-caret="off">Hidden</button>
+                </div>
+            </div>
+
+            <!-- Font Style Settings Section -->
+            <div id="font-section" class="glass-panel p-6 rounded-2xl border border-white/5">
+                <!-- Header with Title & Right-Aligned Live Preview -->
+                <div class="flex justify-between items-center border-b border-white/5 pb-4 mb-4">
+                    <div>
+                        <h3 class="text-xs font-mono uppercase tracking-widest text-brand-accentLight flex items-center gap-2">
+                            <i class="fa-solid fa-font"></i>font style
+                        </h3>
+                    </div>
+                    <!-- Small Capsule Preview -->
+                    <div class="px-4 py-1.5 bg-[#0b0b11]/30 border border-white/5 rounded-xl flex items-center h-9 select-none">
+                        <div class="text-brand-text text-sm font-normal opacity-95 transition-all select-none" id="font-preview-text-el" style="font-family: var(--font-typing);">
+                            AaBbCc 123
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="text-xs text-brand-textMuted mb-6">choose the typeface used for rendering words in the typing test area.</p>
+                
+                <!-- Dynamically Generated Font Grid -->
+                <div id="fonts-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                    <!-- Javascript will dynamically inject buttons here -->
+                </div>
+            </div>
+
+            <!-- Keystroke Audio Settings Section -->
+            <div id="sound-section" class="glass-panel p-6 rounded-2xl border border-white/5">
+                <h3 class="text-xs font-mono uppercase tracking-widest text-brand-accentLight mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-volume-high"></i>keystroke audio
+                </h3>
+                <p class="text-xs text-brand-textMuted mb-6">enable tactile mechanical keyboard audio synth sounds on letter keypresses.</p>
+                
+                <div class="flex flex-wrap gap-2.5">
+                    <button class="sound-pill px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer" data-sound="false">Muted (Off)</button>
+                    <button class="sound-pill px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer" data-sound="true">Synthesizer (On)</button>
+                </div>
+            </div>
+
+            <!-- Word Spacing Settings Section -->
+            <div id="spacing-section" class="glass-panel p-6 rounded-2xl border border-white/5">
+                <!-- Header with Title & Right-Aligned Live Preview -->
+                <div class="flex justify-between items-center border-b border-white/5 pb-4 mb-4">
+                    <div>
+                        <h3 class="text-xs font-mono uppercase tracking-widest text-brand-accentLight flex items-center gap-2">
+                            <i class="fa-solid fa-arrows-left-right"></i>word spacing
+                        </h3>
+                    </div>
+                    <!-- Small Capsule Preview -->
+                    <div class="px-3.5 py-1.5 bg-[#0b0b11]/30 border border-white/5 rounded-xl flex items-center h-9 select-none overflow-hidden relative">
+                        <div class="text-xs flex items-center font-mono animate-fade-in" id="spacing-preview-box">
+                            <span class="text-brand-accent">word</span>
+                            <span id="spacing-preview-gap" class="inline-block bg-brand-accent/25 border-l border-r border-brand-accent/40" style="width: 8px; height: 12px; margin: 0 4px;"></span>
+                            <span class="text-brand-text">space</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="text-xs text-brand-textMuted mb-6">choose the spacing distance size separating words in the typing test display container.</p>
+                
+                <div class="flex flex-wrap gap-2.5">
+                    <button class="spacing-pill px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer" data-spacing="compact">Compact</button>
+                    <button class="spacing-pill px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer" data-spacing="normal">Normal</button>
+                    <button class="spacing-pill px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer" data-spacing="wide">Wide</button>
+                    <button class="spacing-pill px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer" data-spacing="extra-wide">Extra Wide</button>
+                </div>
+            </div>
+
+            <!-- ======================================= -->
+            <!-- CATEGORY: SYSTEM SETTINGS               -->
+            <!-- ======================================= -->
+
+            <!-- Theme Settings Section -->
+            <div id="theme-section" class="glass-panel p-6 rounded-2xl border border-white/5">
+                <h3 class="text-xs font-mono uppercase tracking-widest text-brand-accentLight mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-palette"></i>theme
+                </h3>
+                <p class="text-xs text-brand-textMuted mb-6">choose from 20 premium, hand-crafted design themes suited for every lighting and contrast preference.</p>
+                
+                <!-- Curated Themes Grid -->
+                <div id="themes-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2.5">
+                    <!-- Javascript will dynamically inject buttons here -->
+                </div>
+            </div>
+
+            <!-- Danger Zone Section -->
+            <div id="danger-section" class="glass-panel p-6 rounded-2xl border border-red-500/10 bg-red-500/[0.01]">
+                <h3 class="text-xs font-mono uppercase tracking-widest text-red-400 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation"></i>danger zone
+                </h3>
+                <p class="text-xs text-brand-textMuted mb-6">permanent actions to clear application state. you can reset your local preferences to fresh app defaults.</p>
+                
+                <div class="flex flex-wrap gap-4">
+                    <button id="reset-prefs-btn" class="px-4 py-2.5 rounded-xl text-xs font-semibold border border-red-500/25 hover:border-red-500 text-red-400 hover:bg-red-500/10 active:scale-95 transition-all cursor-pointer">
+                        Reset Preferences to Default
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // Option Pill Button groups
+        const themesGrid = document.getElementById('themes-grid');
+        const caretButtons = document.querySelectorAll('.caret-pill');
+        const soundButtons = document.querySelectorAll('.sound-pill');
+        const spacingButtons = document.querySelectorAll('.spacing-pill');
+        const caretPreviewCursor = document.getElementById('caret-preview-cursor');
+        
+        let audioCtx = null;
+
+        // Load configs
+        const currentTheme = localStorage.getItem('typopulse-theme') || 'monkeytype';
+        let currentCaret = localStorage.getItem('typopulse-caret') || 'line';
+        const currentFont = localStorage.getItem('typopulse-font') || 'jetbrains-mono';
+        let currentSpacing = localStorage.getItem('typopulse-spacing') || 'normal';
+        const soundOn = localStorage.getItem('typopulse-sound') === 'true';
+
+        // Styling classes constants
+        const inactiveClasses = "bg-white/5 border-white/5 text-brand-textMuted hover:bg-white/10 hover:text-white";
+        const activeClasses = "bg-brand-accent/15 border-brand-accent/35 text-brand-accentLight";
+
+        // Dynamically Generate Theme buttons in the grid
+        function renderThemesList() {
+            themesGrid.innerHTML = '';
+            
+            // GLOBAL_THEMES is declared globally in base.html
+            Object.keys(GLOBAL_THEMES).forEach(themeId => {
+                const theme = GLOBAL_THEMES[themeId];
+                
+                const btn = document.createElement('button');
+                btn.className = "px-3 py-3.5 rounded-xl text-left text-xs font-semibold border transition-all cursor-pointer truncate flex items-center justify-between group";
+                btn.title = theme.name;
+                
+                // Color indicator dot
+                btn.innerHTML = `
+                    <span class="truncate">${theme.name}</span>
+                    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 ml-1.5 border border-white/10 shadow" style="background-color: ${theme.accent}"></span>
+                `;
+                
+                // Highlight active theme
+                if (themeId === localStorage.getItem('typopulse-theme')) {
+                    activeClasses.split(' ').forEach(c => btn.classList.add(c));
+                } else {
+                    inactiveClasses.split(' ').forEach(c => btn.classList.add(c));
+                }
+                
+                btn.addEventListener('click', () => {
+                    if (typeof applyGlobalTheme === 'function') {
+                        applyGlobalTheme(themeId);
+                    }
+                    
+                    // Clear other theme highlights
+                    const allThemeButtons = themesGrid.querySelectorAll('button');
+                    allThemeButtons.forEach(b => {
+                        b.className = "px-3 py-3.5 rounded-xl text-left text-xs font-semibold border transition-all cursor-pointer truncate flex items-center justify-between group";
+                        inactiveClasses.split(' ').forEach(c => b.classList.add(c));
+                    });
+                    
+                    // Set active highlight
+                    btn.className = "px-3 py-3.5 rounded-xl text-left text-xs font-semibold border transition-all cursor-pointer truncate flex items-center justify-between group";
+                    activeClasses.split(' ').forEach(c => btn.classList.add(c));
+                    
+                    // Force caret preview color & shadows update instantly on theme switch
+                    setTimeout(() => {
+                        updateCaretPreview(currentCaret);
+                    }, 50);
+                });
+                
+                themesGrid.appendChild(btn);
+            });
+        }
+
+        // Dynamically Generate Font buttons in the grid
+        function renderFontsList() {
+            const fontsGrid = document.getElementById('fonts-grid');
+            if (!fontsGrid) return;
+            fontsGrid.innerHTML = '';
+            
+            Object.keys(FONT_FAMILIES).forEach(fontId => {
+                const font = FONT_FAMILIES[fontId];
+                
+                const btn = document.createElement('button');
+                btn.className = "font-pill px-3 py-3 rounded-xl text-left text-xs font-semibold border transition-all cursor-pointer truncate";
+                btn.title = font.name;
+                btn.textContent = font.name;
+                btn.dataset.font = fontId;
+                btn.style.fontFamily = font.family;
+                
+                // Highlight active font
+                if (fontId === localStorage.getItem('typopulse-font')) {
+                    activeClasses.split(' ').forEach(c => btn.classList.add(c));
+                } else {
+                    inactiveClasses.split(' ').forEach(c => btn.classList.add(c));
+                }
+                
+                btn.addEventListener('click', () => {
+                    if (typeof applyGlobalFont === 'function') {
+                        applyGlobalFont(fontId);
+                    } else {
+                        localStorage.setItem('typopulse-font', fontId);
+                    }
+                    
+                    // Clear other font highlights
+                    const allFontButtons = fontsGrid.querySelectorAll('.font-pill');
+                    allFontButtons.forEach(b => {
+                        b.className = "font-pill px-3 py-3 rounded-xl text-left text-xs font-semibold border transition-all cursor-pointer truncate";
+                        b.style.fontFamily = FONT_FAMILIES[b.dataset.font].family;
+                        inactiveClasses.split(' ').forEach(c => b.classList.add(c));
+                    });
+                    
+                    // Set active highlight
+                    btn.className = "font-pill px-3 py-3 rounded-xl text-left text-xs font-semibold border transition-all cursor-pointer truncate";
+                    btn.style.fontFamily = font.family;
+                    activeClasses.split(' ').forEach(c => btn.classList.add(c));
+                    
+                    // Update header preview label style
+                    const fontPreviewEl = document.getElementById('font-preview-text-el');
+                    if (fontPreviewEl) {
+                        fontPreviewEl.style.fontFamily = font.family;
+                    }
+                    const caretPreviewTextEl = document.getElementById('caret-preview-text-el');
+                    if (caretPreviewTextEl) {
+                        caretPreviewTextEl.style.fontFamily = font.family;
+                    }
+                    
+                    // Re-evaluate caret positions once letter sizing has shifted (50ms timeout)
+                    setTimeout(() => {
+                        updateCaretPreview(currentCaret);
+                    }, 50);
+                });
+                
+                fontsGrid.appendChild(btn);
+            });
+        }
+
+        // Render themes and fonts grid on load
+        renderThemesList();
+        renderFontsList();
+
+        // Option click handlers
+        caretButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const caretVal = btn.dataset.caret;
+                localStorage.setItem('typopulse-caret', caretVal);
+                setActivePill(caretButtons, caretVal, 'caret');
+                
+                currentCaret = caretVal;
+                updateCaretPreview(caretVal);
+            });
+        });
+
+        // Initialize button highlights on load
+        setActivePill(caretButtons, currentCaret, 'caret');
+        setActivePill(soundButtons, soundOn.toString(), 'sound');
+        setActivePill(spacingButtons, currentSpacing, 'spacing');
+        updateSpacingPreview(currentSpacing);
+
+        soundButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const soundVal = btn.dataset.sound === 'true';
+                localStorage.setItem('typopulse-sound', soundVal);
+                setActivePill(soundButtons, soundVal.toString(), 'sound');
+                
+                if (soundVal) {
+                    playTestSound();
+                }
+            });
+        });
+
+        spacingButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const spacingVal = btn.dataset.spacing;
+                if (typeof applyGlobalSpacing === 'function') {
+                    applyGlobalSpacing(spacingVal);
+                } else {
+                    localStorage.setItem('typopulse-spacing', spacingVal);
+                }
+                setActivePill(spacingButtons, spacingVal, 'spacing');
+                
+                currentSpacing = spacingVal;
+                updateSpacingPreview(spacingVal);
+            });
+        });
+
+        // Danger zone clear preferences handler
+        const resetPrefsBtn = document.getElementById('reset-prefs-btn');
+        if (resetPrefsBtn) {
+            resetPrefsBtn.addEventListener('click', () => {
+                if (confirm('Are you sure you want to reset all preferences to default settings?')) {
+                    localStorage.removeItem('typopulse-theme');
+                    localStorage.removeItem('typopulse-caret');
+                    localStorage.removeItem('typopulse-font');
+                    localStorage.removeItem('typopulse-sound');
+                    localStorage.removeItem('typopulse-spacing');
+                    window.location.reload();
+                }
+            });
+        }
+
+        // Set active/inactive Tailwind classes dynamically
+        function setActivePill(buttonGroup, activeValue, type) {
+            buttonGroup.forEach(btn => {
+                const dataVal = type === 'caret' ? btn.dataset.caret : (type === 'sound' ? btn.dataset.sound : (type === 'font' ? btn.dataset.font : btn.dataset.spacing));
+                
+                if (dataVal === activeValue) {
+                    btn.className = btn.className.split(' ').filter(c => !inactiveClasses.split(' ').includes(c)).join(' ');
+                    activeClasses.split(' ').forEach(c => btn.classList.add(c));
+                } else {
+                    btn.className = btn.className.split(' ').filter(c => !activeClasses.split(' ').includes(c)).join(' ');
+                    inactiveClasses.split(' ').forEach(c => btn.classList.add(c));
+                }
+            });
+        }
+
+        // Caret style row preview calculations
+        function updateCaretPreview(caretStyle) {
+            const activeLetter = document.querySelector('.caret-preview-letter:nth-child(2)'); // letter 'a'
+            if (!caretPreviewCursor || !activeLetter) return;
+            
+            // Clean shape categories
+            caretPreviewCursor.classList.remove('caret-block', 'caret-underline');
+            
+            const charHeight = activeLetter.offsetHeight || 20;
+            
+            if (caretStyle === 'off') {
+                caretPreviewCursor.style.display = 'none';
+                return;
+            }
+            caretPreviewCursor.style.display = 'block';
+            
+            if (caretStyle === 'block') {
+                caretPreviewCursor.classList.add('caret-block');
+                caretPreviewCursor.style.width = `${activeLetter.offsetWidth}px`;
+                caretPreviewCursor.style.height = `${charHeight}px`;
+                caretPreviewCursor.style.transform = 'none';
+                caretPreviewCursor.style.backgroundColor = 'var(--color-accent)';
+                caretPreviewCursor.style.boxShadow = 'none';
+            } else if (caretStyle === 'underline') {
+                caretPreviewCursor.classList.add('caret-underline');
+                caretPreviewCursor.style.width = `${activeLetter.offsetWidth}px`;
+                caretPreviewCursor.style.height = '3px';
+                caretPreviewCursor.style.transform = `translateY(${charHeight - 3}px)`;
+                caretPreviewCursor.style.backgroundColor = 'var(--color-accent)';
+            } else { // line
+                caretPreviewCursor.style.width = '2px';
+                caretPreviewCursor.style.height = `${charHeight}px`;
+                caretPreviewCursor.style.transform = 'none';
+                caretPreviewCursor.style.backgroundColor = 'var(--color-accent)';
+                caretPreviewCursor.style.boxShadow = 'none';
+            }
+            
+            caretPreviewCursor.style.left = `${activeLetter.offsetLeft}px`;
+            caretPreviewCursor.style.top = `${activeLetter.offsetTop}px`;
+        }
+
+        // Live Preview spacing gap visualizer
+        function updateSpacingPreview(spacingId) {
+            const previewGap = document.getElementById('spacing-preview-gap');
+            if (!previewGap) return;
+            
+            if (spacingId === 'compact') {
+                previewGap.style.width = '4px';
+                previewGap.style.margin = '0 2px';
+            } else if (spacingId === 'normal') {
+                previewGap.style.width = '8px';
+                previewGap.style.margin = '0 4px';
+            } else if (spacingId === 'wide') {
+                previewGap.style.width = '12px';
+                previewGap.style.margin = '0 6px';
+            } else if (spacingId === 'extra-wide') {
+                previewGap.style.width = '16px';
+                previewGap.style.margin = '0 8px';
+            }
+        }
+
+        // Initialize preview caret position on page load (150ms layout timeout)
+        setTimeout(() => {
+            updateCaretPreview(currentCaret);
+        }, 150);
+
+        // Mechanical click audio feedback preview
+        function playTestSound() {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1450, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(850, audioCtx.currentTime + 0.04);
+                gainNode.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.04);
+            } catch(e) {}
+        }
+
+        // Global Esc shortcut key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                window.location.href = "{{ url_for('main.index') }}";
+            }
+        });
+
+        // Dynamic sidebar highlights on scrolling sections
+        const sidebarLinks = document.querySelectorAll('.sidebar-link');
+        const sections = document.querySelectorAll('#caret-section, #font-section, #sound-section, #spacing-section, #theme-section, #danger-section');
+
+        window.addEventListener('scroll', () => {
+            let currentSec = "";
+            sections.forEach(sec => {
+                const secTop = sec.offsetTop;
+                if (pageYOffset >= secTop - 120) {
+                    currentSec = sec.getAttribute('id');
+                }
+            });
+
+            sidebarLinks.forEach(link => {
+                link.classList.remove('text-brand-accent', 'bg-brand-accent/10');
+                link.classList.add('text-brand-textMuted');
+                
+                if (link.getAttribute('href') === `#${currentSec}`) {
+                    link.classList.remove('text-brand-textMuted');
+                    link.classList.add('text-brand-accent', 'bg-brand-accent/10');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

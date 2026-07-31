@@ -40,8 +40,21 @@ const instructionText = document.getElementById('instruction-text');
 // Bounding box container for scrolling
 const wordsContainerBox = document.getElementById('words-container-box');
 
+let settings = {
+    theme: 'carbon',
+    caret: 'line',
+    sound: false
+};
+
+let audioCtx = null;
+let lastTypedValLength = 0;
+
 // Initialization
 document.addEventListener("DOMContentLoaded", () => {
+    settings.caret = localStorage.getItem('typopulse-caret') || 'line';
+    settings.sound = localStorage.getItem('typopulse-sound') === 'true';
+    applyCaret(settings.caret);
+    
     initTest();
     setupEventListeners();
 });
@@ -56,6 +69,14 @@ function setupEventListeners() {
     // Capture typing inputs
     typingInput.addEventListener('input', handleTyping);
     typingInput.addEventListener('keydown', handleSpecialKeys);
+
+    // Listen for global preferences events from the header modal
+    window.addEventListener('caret-changed', (e) => {
+        applyCaret(e.detail);
+    });
+    window.addEventListener('sound-changed', (e) => {
+        settings.sound = e.detail;
+    });
 
     // Time button switches
     timeBtns.forEach(btn => {
@@ -105,6 +126,72 @@ function setupEventListeners() {
     });
 }
 
+function applyCaret(caretStyle) {
+    // Reset all shapes classes
+    caret.classList.remove('caret-block', 'caret-underline');
+    
+    if (caretStyle === 'block') {
+        caret.classList.add('caret-block');
+    } else if (caretStyle === 'underline') {
+        caret.classList.add('caret-underline');
+    }
+    
+    settings.caret = caretStyle;
+    localStorage.setItem('typopulse-caret', caretStyle);
+    updateCaret(); // Recalculate size and positions
+}
+
+// Audio Click Synth Engine (Web Audio APIs)
+function playKeySound(isError = false, isBackspace = false) {
+    if (!settings.sound) return;
+    
+    try {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        if (isError) {
+            // Low buzz damp thump
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.12);
+            gainNode.gain.setValueAtTime(0.22, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.12);
+        } else if (isBackspace) {
+            // Soft typewriter release click
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(750, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(450, audioCtx.currentTime + 0.04);
+            gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.04);
+        } else {
+            // High key click pop
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1450, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(850, audioCtx.currentTime + 0.035);
+            gainNode.gain.setValueAtTime(0.07, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.035);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.035);
+        }
+    } catch (e) {
+        console.warn("Audio Context playback error:", e);
+    }
+}
+
 function focusInput() {
     typingInput.focus();
     caret.classList.remove('opacity-0');
@@ -116,13 +203,20 @@ function focusInput() {
 // Initial setup of test words
 async function initTest() {
     resetStateVariables();
+    typingInput.disabled = true; // Prevent key buffering during fetch
     wordsList.innerHTML = '<span class="text-brand-textMuted py-4 font-sans text-sm"><i class="fa-solid fa-spinner animate-spin mr-2"></i>Generating word list...</span>';
     
     try {
         const response = await fetch(`/api/words?count=150`);
         words = await response.json();
         renderWords();
+        
+        typingInput.disabled = false; // Re-enable typing
+        typingInput.value = "";       // Discard any characters logged during loading
+        lastTypedValLength = 0;
+        
         updateCaret();
+        focusInput();                 // Auto-focus input for immediate typing start
     } catch (err) {
         console.error("Failed to load words:", err);
         wordsList.innerHTML = '<span class="text-brand-error py-4 font-sans text-sm">Error loading words. Press restart to try again.</span>';
@@ -148,6 +242,7 @@ function resetStateVariables() {
     isTestFinished = false;
     secondStats = [];
     secondsElapsed = 0;
+    lastTypedValLength = 0;
     
     typingInput.value = "";
     countdownDisp.textContent = timeRemaining;
@@ -156,7 +251,10 @@ function resetStateVariables() {
     instructionText.textContent = "Click below and start typing to begin the speed test";
     
     caret.className = "blinking";
+    applyCaret(settings.caret); // Reapply current style config
     wordsContainer.scrollTop = 0;
+    wordsList.style.transform = "translateY(0)";
+    wordsList.style.transition = "none";
 }
 
 // Render word blocks to DOM
@@ -182,7 +280,7 @@ function renderWords() {
 
 // Position caret relative to letters
 function updateCaret() {
-    if (isTestFinished) {
+    if (isTestFinished || settings.caret === 'off') {
         caret.style.display = 'none';
         return;
     }
@@ -198,6 +296,24 @@ function updateCaret() {
         // Place caret at left of current active letter
         caret.style.left = `${activeLetter.offsetLeft}px`;
         caret.style.top = `${activeLetter.offsetTop + 6}px`;
+        
+        const charHeight = activeLetter.offsetHeight;
+        
+        // Apply width scaling for block and underline caret shapes
+        if (settings.caret === 'block' || settings.caret === 'underline') {
+            caret.style.width = `${activeLetter.offsetWidth}px`;
+        } else {
+            caret.style.width = '2.5px';
+        }
+
+        // Apply height and translate transform for underline style
+        if (settings.caret === 'underline') {
+            caret.style.height = '3px';
+            caret.style.transform = `translateY(${charHeight - 3}px)`;
+        } else {
+            caret.style.height = `${charHeight}px`;
+            caret.style.transform = 'none';
+        }
     } else {
         // Caret is at the end of word (space context)
         const letters = activeWord.querySelectorAll('.letter');
@@ -205,12 +321,30 @@ function updateCaret() {
         if (lastLetter) {
             caret.style.left = `${lastLetter.offsetLeft + lastLetter.offsetWidth}px`;
             caret.style.top = `${lastLetter.offsetTop + 6}px`;
+            
+            const charHeight = lastLetter.offsetHeight;
+            
+            // Render cursor standard width for spaces (width of ~8px)
+            if (settings.caret === 'block' || settings.caret === 'underline') {
+                caret.style.width = '8px';
+            } else {
+                caret.style.width = '2.5px';
+            }
+
+            // Apply height and translate transform for space context
+            if (settings.caret === 'underline') {
+                caret.style.height = '3px';
+                caret.style.transform = `translateY(${charHeight - 3}px)`;
+            } else {
+                caret.style.height = `${charHeight}px`;
+                caret.style.transform = 'none';
+            }
         }
     }
 }
 
 // Main keystroke routing
-function handleTyping(e) {
+function handleTyping(e, isSilent = false) {
     if (isTestFinished) return;
     
     // Start timer on first keystroke
@@ -225,6 +359,27 @@ function handleTyping(e) {
     if (!activeWordSpan) return;
     
     const targetWord = words[currentWordIndex];
+    
+    // Play keystroke click sounds
+    if (!isSilent) {
+        const lastCharIdx = typedVal.length - 1;
+        if (lastCharIdx >= 0) {
+            const isBackspace = typedVal.length < lastTypedValLength;
+            if (isBackspace) {
+                playKeySound(false, true);
+            } else if (lastCharIdx >= targetWord.length) {
+                playKeySound(true); // Error: typing beyond word boundary
+            } else {
+                const isCorrect = (typedVal[lastCharIdx] === targetWord[lastCharIdx]);
+                playKeySound(!isCorrect);
+            }
+        } else if (typedVal.length < lastTypedValLength) {
+            // Backspacing from the first letter of a word back to empty
+            playKeySound(false, true);
+        }
+    }
+    lastTypedValLength = typedVal.length;
+    
     const letterSpans = activeWordSpan.querySelectorAll('.letter');
     
     // Clear extra letter tags
@@ -283,6 +438,11 @@ function handleSpecialKeys(e) {
         
         submitWord();
     }
+    
+    // Go back to previous word on Backspace if current word input is empty
+    if (e.key === "Backspace" && typingInput.value === "") {
+        goBackToPreviousWord();
+    }
 }
 
 // Evaluate typed word and shift indices
@@ -338,6 +498,7 @@ function submitWord() {
         if (nextLetters[0]) nextLetters[0].classList.add('active');
         
         typingInput.value = "";
+        lastTypedValLength = 0;
         
         // Handle vertical scrolling if next word line moves down
         handleLineScrolling(nextWordSpan);
@@ -347,6 +508,95 @@ function submitWord() {
         // Run out of loaded words
         endTest();
     }
+}
+
+// Scan completed words and recompute speed tallies
+function recalculateTallies() {
+    correctCharsCount = 0;
+    incorrectCharsCount = 0;
+    totalErrors = 0;
+    
+    for (let i = 0; i < currentWordIndex; i++) {
+        const wordSpan = document.getElementById(`word-${i}`);
+        if (!wordSpan) continue;
+        
+        const targetWord = words[i];
+        let typedWordVal = "";
+        let wordCorrect = true;
+        
+        const letters = wordSpan.querySelectorAll('.letter');
+        letters.forEach(letter => {
+            if (letter.classList.contains('correct')) {
+                correctCharsCount++;
+                typedWordVal += letter.textContent;
+            } else if (letter.classList.contains('incorrect')) {
+                incorrectCharsCount++;
+                totalErrors++;
+                typedWordVal += letter.textContent;
+                wordCorrect = false;
+            }
+        });
+        
+        // Account for missed/incomplete characters in that word
+        if (typedWordVal.length < targetWord.length) {
+            const diff = targetWord.length - typedWordVal.length;
+            incorrectCharsCount += diff;
+            totalErrors += diff;
+            wordCorrect = false;
+        }
+        
+        // Space bar tally
+        if (wordCorrect && typedWordVal === targetWord) {
+            correctCharsCount++;
+        } else {
+            incorrectCharsCount++;
+        }
+    }
+}
+
+// Go back to the previous word for corrections (Monkeytype Freedom Mode)
+function goBackToPreviousWord() {
+    if (currentWordIndex === 0) return;
+    
+    const currentWordSpan = document.getElementById(`word-${currentWordIndex}`);
+    const prevWordSpan = document.getElementById(`word-${currentWordIndex - 1}`);
+    if (!prevWordSpan) return;
+    
+    // Remove active markers from current word letter spans
+    if (currentWordSpan) {
+        currentWordSpan.classList.remove('active');
+        const activeLetters = currentWordSpan.querySelectorAll('.letter.active');
+        activeLetters.forEach(l => l.classList.remove('active'));
+    }
+    
+    // Reconstruct exact typed buffer from previous word spans
+    let reconstructedVal = "";
+    const letters = prevWordSpan.querySelectorAll('.letter');
+    letters.forEach(letter => {
+        if (letter.classList.contains('correct') || letter.classList.contains('incorrect')) {
+            reconstructedVal += letter.textContent;
+        }
+    });
+    
+    // Decrement active index
+    currentWordIndex--;
+    
+    // Restore text into keyboard input
+    typingInput.value = reconstructedVal;
+    lastTypedValLength = reconstructedVal.length;
+    
+    // Re-active word layout classes
+    prevWordSpan.classList.remove('error-underline');
+    prevWordSpan.classList.add('active');
+    
+    // Re-tally cumulative scores up to new word index
+    recalculateTallies();
+    
+    // Manually run handleTyping to redraw letter highlights on previous word
+    handleTyping(null, true);
+    
+    // Handle scrolling if we jumped back up to a previous line
+    handleLineScrolling(prevWordSpan);
 }
 
 // Calculate lines offset and scroll container smoothly
@@ -373,10 +623,19 @@ function startTimer() {
         countdownDisp.textContent = timeRemaining;
         
         // Calculate and log stats for graphs
-        const liveWpm = calculateLiveMetrics();
+        const stats = calculateLiveMetrics();
+        
+        // Calculate standard errors in this specific second
+        const lastErrCount = secondStats.length > 0 ? secondStats[secondStats.length - 1].totalIncorrect : 0;
+        const currentIncorrect = stats.incorrect;
+        const errorsThisSecond = Math.max(0, currentIncorrect - lastErrCount);
+        
         secondStats.push({
             second: secondsElapsed,
-            wpm: liveWpm
+            wpm: stats.wpm,
+            rawWpm: stats.rawWpm,
+            errors: errorsThisSecond,
+            totalIncorrect: currentIncorrect
         });
         
         if (timeRemaining <= 0) {
@@ -405,13 +664,14 @@ function calculateLiveMetrics() {
     
     const wpm = Math.round((activeCorrect / 5) / elapsedMinutes);
     const totalTyped = activeCorrect + activeIncorrect;
+    const rawWpm = Math.round((totalTyped / 5) / elapsedMinutes);
     const accuracy = totalTyped > 0 ? Math.round((activeCorrect / totalTyped) * 100) : 100;
     
     // Display live stats
     liveWpmDisp.textContent = wpm;
     liveAccuracyDisp.textContent = `${accuracy}%`;
     
-    return wpm;
+    return { wpm, rawWpm, accuracy, correct: activeCorrect, incorrect: activeIncorrect };
 }
 
 // End test, compute final scores, send payload, plot chart
@@ -434,12 +694,55 @@ function endTest() {
     const finalWpm = Math.round((correctCharsCount / 5) / elapsedMinutes);
     const totalTyped = correctCharsCount + incorrectCharsCount;
     const finalAccuracy = totalTyped > 0 ? Math.round((correctCharsCount / totalTyped) * 100) : 100;
+    const finalRawWpm = Math.round((totalTyped / 5) / elapsedMinutes);
     
-    // Show stats
-    document.getElementById('result-wpm').innerHTML = `${finalWpm} <span class="text-xs font-normal text-brand-textMuted">WPM</span>`;
+    // Calculate character details: correct / incorrect / extra / missed
+    let correctCount = 0;
+    let incorrectCount = 0;
+    let extraCount = 0;
+    let missedCount = 0;
+    
+    for (let i = 0; i <= currentWordIndex; i++) {
+        const wordSpan = document.getElementById(`word-${i}`);
+        if (!wordSpan) continue;
+        
+        const letters = wordSpan.querySelectorAll('.letter');
+        letters.forEach(letter => {
+            if (letter.classList.contains('correct')) {
+                correctCount++;
+            } else if (letter.classList.contains('extra')) {
+                extraCount++;
+            } else if (letter.classList.contains('incorrect')) {
+                incorrectCount++;
+            } else {
+                missedCount++;
+            }
+        });
+    }
+    
+    // Calculate typing speed consistency score (normalized Coefficient of Variation)
+    let consistency = 100;
+    if (secondStats.length >= 2) {
+        const wpms = secondStats.map(s => s.wpm);
+        const mean = wpms.reduce((a, b) => a + b, 0) / wpms.length;
+        if (mean > 0) {
+            const variance = wpms.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / wpms.length;
+            const stdDev = Math.sqrt(variance);
+            consistency = Math.round(100 * (1 - (stdDev / mean)));
+            if (consistency < 0) consistency = 0;
+            if (consistency > 100) consistency = 100;
+        } else {
+            consistency = 0;
+        }
+    }
+    
+    // Bind stats to dashboard display elements
+    document.getElementById('result-wpm').textContent = finalWpm;
     document.getElementById('result-accuracy').textContent = `${finalAccuracy}%`;
-    document.getElementById('result-correct').textContent = correctCharsCount;
-    document.getElementById('result-errors').textContent = incorrectCharsCount;
+    document.getElementById('result-type').textContent = `time ${testDuration}`;
+    document.getElementById('result-raw-wpm').textContent = finalRawWpm;
+    document.getElementById('result-chars-ratio').textContent = `${correctCount}/${incorrectCount}/${extraCount}/${missedCount}`;
+    document.getElementById('result-consistency').textContent = `${consistency}%`;
     document.getElementById('result-time').textContent = `${testDuration}s`;
     
     // Swap panels
@@ -487,34 +790,72 @@ function renderLiveChart() {
     
     const labels = secondStats.map(s => `${s.second}s`);
     const wpmData = secondStats.map(s => s.wpm);
+    const rawWpmData = secondStats.map(s => s.rawWpm || s.wpm);
+    const errorData = secondStats.map(s => s.errors || 0);
     
-    // Neon Gradient
-    const borderGradient = ctx.createLinearGradient(0, 0, 0, 200);
-    borderGradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
-    borderGradient.addColorStop(1, 'rgba(139, 92, 246, 0.0)');
+    // Retrieve colors dynamically from document styling variables
+    const style = getComputedStyle(document.documentElement);
+    const accentColor = style.getPropertyValue('--color-accent').trim() || '#e2b714';
+    const mutedColor = style.getPropertyValue('--color-muted').trim() || '#646669';
+    const errorColor = style.getPropertyValue('--color-error').trim() || '#ca4754';
     
     resultChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
-            datasets: [{
-                label: 'Speed (WPM)',
-                data: wpmData,
-                borderColor: '#8b5cf6',
-                borderWidth: 3,
-                pointBackgroundColor: '#8b5cf6',
-                pointBorderColor: '#ffffff',
-                pointRadius: 3,
-                fill: true,
-                backgroundColor: borderGradient,
-                tension: 0.35
-            }]
+            datasets: [
+                {
+                    label: 'Errors',
+                    data: errorData,
+                    borderColor: errorColor,
+                    backgroundColor: errorColor,
+                    pointBackgroundColor: errorColor,
+                    pointBorderColor: errorColor,
+                    pointRadius: 3.5,
+                    pointHoverRadius: 5.5,
+                    showLine: false, // Scatter style points only
+                    yAxisID: 'yErrors'
+                },
+                {
+                    label: 'Raw WPM',
+                    data: rawWpmData,
+                    borderColor: mutedColor,
+                    borderWidth: 1.5,
+                    borderDash: [3, 3],
+                    pointBackgroundColor: 'transparent',
+                    pointBorderColor: 'transparent',
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.35,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'WPM',
+                    data: wpmData,
+                    borderColor: accentColor,
+                    borderWidth: 3,
+                    pointBackgroundColor: accentColor,
+                    pointBorderColor: '#ffffff',
+                    pointRadius: 2,
+                    fill: true,
+                    backgroundColor: 'rgba(255, 255, 255, 0.01)', // soft fill
+                    tension: 0.35,
+                    yAxisID: 'y'
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false },
+                legend: { 
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: mutedColor,
+                        font: { family: 'Outfit', size: 10 }
+                    }
+                },
                 tooltip: {
                     padding: 8,
                     bodyFont: { family: 'Outfit' },
@@ -523,13 +864,26 @@ function renderLiveChart() {
             },
             scales: {
                 x: {
-                    grid: { color: 'rgba(255, 255, 255, 0.02)' },
-                    ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } }
+                    grid: { color: 'rgba(255, 255, 255, 0.01)' },
+                    ticks: { color: mutedColor, font: { family: 'JetBrains Mono', size: 9 } }
                 },
                 y: {
-                    grid: { color: 'rgba(255, 255, 255, 0.03)' },
-                    ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } },
-                    title: { display: true, text: 'WPM', color: '#64748b', font: { family: 'Outfit', size: 11 } }
+                    grid: { color: 'rgba(255, 255, 255, 0.02)' },
+                    ticks: { color: mutedColor, font: { family: 'JetBrains Mono', size: 9 } },
+                    title: { display: true, text: 'Words Per Minute', color: mutedColor, font: { family: 'Outfit', size: 10 } }
+                },
+                yErrors: {
+                    position: 'right',
+                    grid: { drawOnChartArea: false }, // don't draw grid lines for errors scale
+                    ticks: { 
+                        color: errorColor, 
+                        font: { family: 'JetBrains Mono', size: 9 },
+                        stepSize: 1,
+                        precision: 0
+                    },
+                    title: { display: true, text: 'Errors', color: errorColor, font: { family: 'Outfit', size: 10 } },
+                    min: 0,
+                    suggestedMax: 5
                 }
             }
         }
