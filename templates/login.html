@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Log In - TypoPulse{% endblock %}
+
+{% block content %}
+<div class="flex-grow flex items-center justify-center py-10">
+    <div class="w-full max-w-md glass-panel p-8 rounded-3xl glow-accent transition-all duration-300 relative overflow-hidden">
+        <!-- Accent light source inside the card -->
+        <div class="absolute top-0 right-0 w-32 h-32 bg-brand-accent opacity-10 blur-2xl rounded-full"></div>
+        
+        <!-- Header -->
+        <div class="text-center mb-8 relative z-10">
+            <h1 class="text-3xl font-bold tracking-tight text-white mb-2">Welcome Back</h1>
+            <p class="text-brand-textMuted text-sm">Sign in to save your typing history and track speed growth</p>
+        </div>
+
+        <!-- Form -->
+        <form method="POST" action="{{ url_for('login') }}" class="space-y-6 relative z-10">
+            <!-- Username/Email -->
+            <div>
+                <label for="login_identifier" class="block text-xs font-semibold uppercase tracking-wider text-brand-textMuted mb-2">Username or Email</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-brand-textMuted">
+                        <i class="fa-regular fa-envelope"></i>
+                    </span>
+                    <input type="text" name="login_identifier" id="login_identifier" required placeholder="Enter username or email"
+                        class="w-full bg-[#161626]/60 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-sm text-white placeholder-brand-textMuted focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all duration-200">
+                </div>
+            </div>
+
+            <!-- Password -->
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-brand-textMuted">Password</label>
+                </div>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-brand-textMuted">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
+                    <input type="password" name="password" id="password" required placeholder="Enter password"
+                        class="w-full bg-[#161626]/60 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-sm text-white placeholder-brand-textMuted focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all duration-200">
+                </div>
+            </div>
+
+            <!-- Remember Me -->
+            <div class="flex items-center">
+                <input type="checkbox" name="remember" id="remember" 
+                    class="w-4.5 h-4.5 rounded border-white/10 text-brand-accent bg-[#161626] focus:ring-brand-accent focus:ring-offset-[#0a0a0f] accent-brand-accent cursor-pointer">
+                <label for="remember" class="ml-2 text-sm text-brand-textMuted select-none cursor-pointer hover:text-white transition-colors">Keep me signed in</label>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" 
+                class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-brand-accent to-indigo-600 hover:from-brand-accentLight hover:to-indigo-500 font-semibold text-white transition-all duration-200 shadow-md shadow-brand-accent/25 hover:shadow-brand-accent/40 active:scale-[0.98]">
+                Sign In <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+            </button>
+        </form>
+
+        <!-- Footer Links -->
+        <div class="mt-8 text-center border-t border-white/5 pt-6 relative z-10">
+            <p class="text-sm text-brand-textMuted">
+                Don't have an account? 
+                <a href="{{ url_for('register') }}" class="font-semibold text-brand-accentLight hover:text-brand-accent hover:underline transition-colors ml-1">Create an account</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

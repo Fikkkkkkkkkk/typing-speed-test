@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - TypoPulse{% endblock %}
+
+{% block head %}
+<!-- ChartJS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8 py-4">
+    <!-- Welcome Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight text-white mb-1">Developer Dashboard</h1>
+            <p class="text-brand-textMuted text-sm">Review your typing history, performance metrics, and learning curves</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="{{ url_for('index') }}" class="px-4 py-2.5 bg-brand-accent hover:bg-brand-accentLight text-white text-sm font-semibold rounded-xl transition-all duration-200 shadow-md shadow-brand-accent/25 hover:shadow-brand-accent/40 active:scale-[0.98]">
+                <i class="fa-solid fa-keyboard mr-2"></i>Start New Test
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Grid -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Avg WPM -->
+        <div class="glass-panel p-6 rounded-2xl border border-white/5 hover:border-brand-accent/20 transition-all">
+            <div class="flex items-center justify-between text-brand-textMuted mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Average Speed</span>
+                <i class="fa-solid fa-gauge-high text-brand-accent"></i>
+            </div>
+            <div class="flex items-baseline space-x-1.5">
+                <span class="text-3xl font-bold text-white">{{ avg_wpm }}</span>
+                <span class="text-xs text-brand-textMuted font-mono">WPM</span>
+            </div>
+        </div>
+
+        <!-- PB WPM -->
+        <div class="glass-panel p-6 rounded-2xl border border-white/5 hover:border-emerald-500/20 transition-all">
+            <div class="flex items-center justify-between text-brand-textMuted mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Personal Best WPM</span>
+                <i class="fa-solid fa-trophy text-amber-500"></i>
+            </div>
+            <div class="flex items-baseline space-x-1.5">
+                <span class="text-3xl font-bold text-emerald-400">{{ pb_wpm }}</span>
+                <span class="text-xs text-brand-textMuted font-mono">WPM</span>
+            </div>
+        </div>
+
+        <!-- Avg Accuracy -->
+        <div class="glass-panel p-6 rounded-2xl border border-white/5 hover:border-brand-accent/20 transition-all">
+            <div class="flex items-center justify-between text-brand-textMuted mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Avg Accuracy</span>
+                <i class="fa-regular fa-circle-check text-brand-accent"></i>
+            </div>
+            <div class="flex items-baseline space-x-1.5">
+                <span class="text-3xl font-bold text-white">{{ avg_accuracy }}</span>
+                <span class="text-xs text-brand-textMuted font-mono">%</span>
+            </div>
+        </div>
+
+        <!-- Total Tests -->
+        <div class="glass-panel p-6 rounded-2xl border border-white/5 hover:border-brand-accent/20 transition-all">
+            <div class="flex items-center justify-between text-brand-textMuted mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Tests Taken</span>
+                <i class="fa-solid fa-history text-indigo-400"></i>
+            </div>
+            <div class="flex items-baseline space-x-1.5">
+                <span class="text-3xl font-bold text-white">{{ total_tests }}</span>
+                <span class="text-xs text-brand-textMuted font-mono">tests</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart and Performance Analysis -->
+    {% if total_tests > 0 %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Speed progression Chart -->
+        <div class="lg:col-span-2 glass-panel p-6 rounded-2xl border border-white/5">
+            <h3 class="text-lg font-bold text-white mb-4"><i class="fa-solid fa-chart-line mr-2 text-brand-accent"></i>WPM Speed Progression</h3>
+            <div class="h-64 md:h-80 w-full">
+                <canvas id="wpmChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Stats card -->
+        <div class="glass-panel p-6 rounded-2xl border border-white/5 flex flex-col justify-between">
+            <div>
+                <h3 class="text-lg font-bold text-white mb-4"><i class="fa-solid fa-circle-info mr-2 text-teal-400"></i>Performance Insight</h3>
+                <div class="space-y-4 text-sm text-brand-textMuted">
+                    <p>Your typing profile indicates that you have taken <strong class="text-white">{{ total_tests }}</strong> tests, with a personal best speed of <strong class="text-emerald-400">{{ pb_wpm }} WPM</strong>.</p>
+                    <p>To continue improving, target an accuracy of at least <strong class="text-white">95%</strong>. Maintaining a consistent pacing rhythm is highly effective for reducing errors.</p>
+                </div>
+            </div>
+            <div class="mt-6 pt-6 border-t border-white/5 text-xs text-brand-textMuted flex items-center space-x-2">
+                <i class="fa-solid fa-shield-halved text-brand-accent"></i>
+                <span>Data stored locally in SQLite database.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Log Table -->
+    <div class="glass-panel rounded-2xl border border-white/5 overflow-hidden">
+        <div class="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+            <h3 class="text-lg font-bold text-white"><i class="fa-solid fa-list-check mr-2 text-indigo-400"></i>Recent Test History</h3>
+            <span class="text-xs bg-white/5 px-2.5 py-1 rounded-full font-mono text-brand-textMuted">Latest 10 tests</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm border-collapse">
+                <thead>
+                    <tr class="text-brand-textMuted border-b border-white/5 bg-white/[0.01]">
+                        <th class="px-6 py-4 font-semibold">Date & Time</th>
+                        <th class="px-6 py-4 font-semibold">Speed (WPM)</th>
+                        <th class="px-6 py-4 font-semibold">Accuracy</th>
+                        <th class="px-6 py-4 font-semibold">Duration</th>
+                        <th class="px-6 py-4 font-semibold">Mode</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {% for result in results[:10] %}
+                    <tr class="hover:bg-white/[0.02] transition-colors">
+                        <td class="px-6 py-4 font-mono text-xs text-brand-textMuted">{{ result.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td class="px-6 py-4 font-semibold font-mono {% if result.wpm >= 80 %}text-emerald-400{% elif result.wpm >= 50 %}text-brand-accentLight{% else %}text-brand-text{% endif %}">
+                            {{ result.wpm }} <span class="text-xs font-normal text-brand-textMuted">wpm</span>
+                        </td>
+                        <td class="px-6 py-4 font-mono font-semibold {% if result.accuracy >= 95 %}text-emerald-400{% elif result.accuracy >= 90 %}text-amber-400{% else %}text-brand-error{% endif %}">
+                            {{ result.accuracy }}%
+                        </td>
+                        <td class="px-6 py-4 font-mono text-brand-textMuted">{{ result.duration }}s</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-0.5 rounded bg-white/5 border border-white/5 text-xs text-brand-textMuted uppercase font-mono tracking-wider">{{ result.mode }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="glass-panel p-12 rounded-3xl border border-white/5 text-center flex flex-col items-center justify-center">
+        <div class="w-16 h-16 bg-brand-accent/10 border border-brand-accent/20 rounded-2xl flex items-center justify-center text-brand-accent mb-4 text-2xl">
+            <i class="fa-solid fa-chart-bar"></i>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-2">No Test History Found</h3>
+        <p class="text-brand-textMuted max-w-sm text-sm mb-6">You haven't completed any typing speed tests under this account yet. Take a test to visualize your speed curves!</p>
+        <a href="{{ url_for('index') }}" class="px-5 py-3 bg-brand-accent hover:bg-brand-accentLight text-white text-sm font-semibold rounded-xl transition-all duration-200">
+            Take Your First Test
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if total_tests > 0 %}
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // Fetch stats from local API
+        fetch('/api/test/history')
+            .then(res => res.json())
+            .then(data => {
+                if (!data || data.length === 0) return;
+                
+                // Truncate to last 15 tests for clarity on chart
+                const recentData = data.slice(-15);
+                
+                const labels = recentData.map((d, index) => `#${index + 1}`);
+                const wpmValues = recentData.map(d => d.wpm);
+                const accValues = recentData.map(d => d.accuracy);
+                
+                const ctx = document.getElementById('wpmChart').getContext('2d');
+                
+                // Create neon gradient
+                const accentGradient = ctx.createLinearGradient(0, 0, 0, 300);
+                accentGradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
+                accentGradient.addColorStop(1, 'rgba(139, 92, 246, 0.0)');
+                
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'WPM Speed',
+                                data: wpmValues,
+                                borderColor: '#8b5cf6',
+                                borderWidth: 3,
+                                pointBackgroundColor: '#8b5cf6',
+                                pointBorderColor: '#ffffff',
+                                pointBorderWidth: 1.5,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                fill: true,
+                                backgroundColor: accentGradient,
+                                tension: 0.35,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Accuracy (%)',
+                                data: accValues,
+                                borderColor: '#10b981',
+                                borderWidth: 1.5,
+                                borderDash: [4, 4],
+                                pointBackgroundColor: '#10b981',
+                                pointRadius: 2,
+                                pointHoverRadius: 4,
+                                fill: false,
+                                tension: 0.1,
+                                yAxisID: 'y1',
+                                hidden: true // User can click legend to show
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#94a3b8',
+                                    font: { family: 'Outfit', size: 12 }
+                                }
+                            },
+                            tooltip: {
+                                padding: 12,
+                                titleFont: { family: 'Outfit', size: 13 },
+                                bodyFont: { family: 'Outfit', size: 12 },
+                                backgroundColor: '#12121e',
+                                borderColor: 'rgba(255,255,255,0.08)',
+                                borderWidth: 1,
+                                callbacks: {
+                                    title: function(context) {
+                                        const index = context[0].dataIndex;
+                                        return `Test Taken on ${recentData[index].timestamp}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: 'rgba(255, 255, 255, 0.02)' },
+                                ticks: { color: '#64748b', font: { family: 'JetBrains Mono' } }
+                            },
+                            y: {
+                                position: 'left',
+                                grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                                ticks: { color: '#8b5cf6', font: { family: 'JetBrains Mono' } },
+                                title: { display: true, text: 'WPM', color: '#8b5cf6' }
+                            },
+                            y1: {
+                                position: 'right',
+                                grid: { display: false },
+                                ticks: { color: '#10b981', font: { family: 'JetBrains Mono' } },
+                                title: { display: true, text: 'Accuracy %', color: '#10b981' },
+                                min: 0,
+                                max: 100
+                            }
+                        }
+                    }
+                });
+            });
+    });
+</script>
+{% endif %}
+{% endblock %}

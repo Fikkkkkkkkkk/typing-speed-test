@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Typing Speed Test - TypoPulse{% endblock %}
+
+{% block head %}
+<!-- ChartJS for instant feedback after test -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* Typing test custom styling */
+    .words-wrapper {
+        position: relative;
+        line-height: 2.25rem;
+        height: 120px;
+        overflow: hidden;
+    }
+    
+    .word {
+        display: inline-block;
+        margin-right: 0.6em;
+        margin-bottom: 0.2em;
+        color: #4b5563; /* Default muted word color */
+        font-size: 1.5rem;
+        transition: color 0.15s ease;
+    }
+    
+    .letter {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .letter.correct {
+        color: #10b981; /* Emerald correct */
+    }
+    
+    .letter.incorrect {
+        color: #f43f5e; /* Rose incorrect */
+    }
+    
+    .letter.active {
+        color: #f1f5f9; /* White active letter */
+    }
+    
+    /* Smooth caret definition */
+    #caret {
+        position: absolute;
+        width: 2.5px;
+        height: 1.75rem;
+        background-color: #8b5cf6;
+        box-shadow: 0 0 10px rgba(139, 92, 246, 0.7);
+        border-radius: 2px;
+        transition: left 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94), top 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        z-index: 10;
+        pointer-events: none;
+    }
+    
+    #caret.blinking {
+        animation: caretBlink 1s infinite;
+    }
+    
+    @keyframes caretBlink {
+        0%, 100% { opacity: 0.1; }
+        50% { opacity: 1; }
+    }
+    
+    .word.error-underline {
+        border-bottom: 2px dotted #f43f5e;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex-grow flex flex-col justify-center items-center py-4 relative">
+    
+    <!-- Hidden Input to Capture Keystrokes -->
+    <input type="text" id="typing-input" class="absolute opacity-0 pointer-events-none" autocomplete="off" autofocus>
+
+    <!-- Typing Test Card -->
+    <div id="test-card" class="w-full max-w-4xl glass-panel rounded-3xl p-8 transition-all duration-300 relative border border-white/5 glow-accent">
+        
+        <!-- Top Toolbar -->
+        <div id="toolbar" class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-white/5 pb-4">
+            <!-- Mode selection -->
+            <div class="flex items-center space-x-1 bg-[#161626]/80 p-1 rounded-xl border border-white/5">
+                <span class="text-xs text-brand-textMuted px-3 py-1 font-mono uppercase tracking-wider">Duration</span>
+                <button class="time-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent bg-brand-accent/10" data-time="15">15s</button>
+                <button class="time-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-time="30">30s</button>
+                <button class="time-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-time="60">60s</button>
+            </div>
+            
+            <!-- Instructions/Status -->
+            <div class="flex items-center text-xs text-brand-textMuted">
+                <i class="fa-solid fa-circle-info mr-2 text-brand-accent"></i>
+                <span id="instruction-text">Click below and start typing to begin the speed test</span>
+            </div>
+        </div>
+
+        <!-- Main Display Interface -->
+        <div class="relative bg-[#0b0b11]/50 border border-white/5 rounded-2xl p-6 md:p-8 select-none cursor-text mb-6" id="words-container-box">
+            
+            <!-- Top stats (countdown / wpm) -->
+            <div class="flex justify-between items-center mb-6">
+                <!-- Large Timer Countdown -->
+                <div class="flex items-center space-x-2 text-brand-accent">
+                    <i class="fa-regular fa-clock text-lg"></i>
+                    <span id="countdown" class="text-2xl font-bold font-mono">30</span>
+                </div>
+                
+                <!-- Live Stats -->
+                <div class="flex items-center space-x-6 text-sm text-brand-textMuted font-mono">
+                    <div>WPM: <span id="live-wpm" class="text-white font-bold">0</span></div>
+                    <div>Accuracy: <span id="live-accuracy" class="text-white font-bold">100%</span></div>
+                </div>
+            </div>
+
+            <!-- Words area -->
+            <div class="words-wrapper font-mono leading-loose tracking-wide overflow-hidden" id="words-container">
+                <!-- Smooth caret cursor -->
+                <div id="caret" class="blinking"></div>
+                <!-- Dynamic words list populated via Javascript -->
+                <div id="words-list" class="flex flex-wrap w-full select-none">
+                    <span class="text-brand-textMuted py-4">Loading words...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Restart Control -->
+        <div class="flex justify-center">
+            <button id="restart-btn" class="px-5 py-2.5 rounded-xl border border-white/10 hover:border-brand-accent/40 bg-white/5 hover:bg-brand-accent/10 text-brand-textMuted hover:text-brand-accentLight font-semibold text-sm transition-all duration-200 flex items-center space-x-2 active:scale-95 shadow-sm" title="Press Esc/Tab+Enter to restart">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span>Restart Test</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Results Display Panel (Initially Hidden) -->
+    <div id="results-card" class="w-full max-w-4xl glass-panel rounded-3xl p-8 border border-white/5 glow-accent hidden animate-fade-in relative overflow-hidden">
+        <!-- Ambient lighting -->
+        <div class="absolute top-0 right-0 w-48 h-48 bg-brand-accent opacity-10 blur-3xl rounded-full"></div>
+        <div class="absolute bottom-0 left-0 w-48 h-48 bg-teal-500 opacity-5 blur-3xl rounded-full"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
+            <!-- Left metrics side -->
+            <div class="lg:col-span-1 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight text-white mb-2">Test Complete!</h2>
+                    <p class="text-brand-textMuted text-xs mb-6">Here is your speed performance evaluation.</p>
+                    
+                    <div class="space-y-6">
+                        <!-- Final WPM -->
+                        <div class="flex items-center justify-between border-b border-white/5 pb-3">
+                            <span class="text-sm text-brand-textMuted"><i class="fa-solid fa-gauge-high mr-2 text-brand-accent"></i>Typing Speed</span>
+                            <span class="text-2xl font-extrabold text-white font-mono" id="result-wpm">0 <span class="text-xs font-normal text-brand-textMuted">WPM</span></span>
+                        </div>
+                        
+                        <!-- Final Accuracy -->
+                        <div class="flex items-center justify-between border-b border-white/5 pb-3">
+                            <span class="text-sm text-brand-textMuted"><i class="fa-regular fa-circle-check mr-2 text-emerald-400"></i>Accuracy</span>
+                            <span class="text-2xl font-extrabold text-emerald-400 font-mono" id="result-accuracy">0%</span>
+                        </div>
+
+                        <!-- Raw Keypress Stats -->
+                        <div class="space-y-2 text-xs font-mono text-brand-textMuted bg-white/5 p-4 rounded-xl border border-white/5">
+                            <div class="flex justify-between">
+                                <span>Correct Characters:</span>
+                                <span class="text-white font-semibold" id="result-correct">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Incorrect Characters:</span>
+                                <span class="text-brand-error font-semibold" id="result-errors">0</span>
+                            </div>
+                            <div class="flex justify-between border-t border-white/5 pt-2 mt-2">
+                                <span>Time Elapsed:</span>
+                                <span class="text-white font-semibold" id="result-time">0s</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Database status prompt -->
+                <div class="mt-8 pt-6 border-t border-white/5">
+                    {% if current_user.is_authenticated %}
+                    <div class="text-xs text-brand-success flex items-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>Results securely saved to your profile!</span>
+                    </div>
+                    {% else %}
+                    <div class="text-xs text-brand-textMuted flex flex-col gap-2 bg-[#12121e] p-3.5 rounded-xl border border-white/5">
+                        <span class="text-white font-semibold flex items-center gap-1.5"><i class="fa-solid fa-circle-info text-brand-accent"></i>Guest Mode</span>
+                        <span>Create an account to save results to your portfolio dashboard and visualize speed logs!</span>
+                        <a href="{{ url_for('register') }}" class="text-brand-accentLight hover:underline font-bold mt-1 text-right flex items-center justify-end gap-1">Register <i class="fa-solid fa-chevron-right text-[10px]"></i></a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Graph and Try Again section -->
+            <div class="lg:col-span-2 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-sm font-semibold uppercase tracking-wider text-brand-textMuted mb-4"><i class="fa-solid fa-chart-line mr-2 text-brand-accent"></i>Second-by-Second WPM</h3>
+                    <div class="h-56 md:h-64 w-full bg-[#07070a]/40 rounded-2xl border border-white/5 p-4">
+                        <canvas id="liveTestChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-end gap-3">
+                    <button id="result-retry-btn" class="px-6 py-3 rounded-xl bg-brand-accent hover:bg-brand-accentLight text-white font-semibold text-sm transition-all duration-200 flex items-center space-x-2 active:scale-95 shadow-md shadow-brand-accent/25 hover:shadow-brand-accent/40">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>Try Again</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}
