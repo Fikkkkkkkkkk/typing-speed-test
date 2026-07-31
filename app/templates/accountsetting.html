@@ -1,0 +1,883 @@
+{% extends "base.html" %}
+
+{% block title %}Account Settings - TypoPulse{% endblock %}
+
+{% block head %}
+<style>
+    .danger-btn {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1;
+    }
+    
+    /* Progress bar overlay inside button background */
+    .danger-btn::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background-color: rgba(239, 68, 68, 0.25);
+        transform: scaleX(0);
+        transform-origin: left;
+        z-index: 0;
+        pointer-events: none;
+        transition: none;
+    }
+    
+    .danger-btn-filled::after {
+        background-color: rgba(255, 255, 255, 0.25) !important;
+    }
+    
+    /* 5 seconds wait fills the progress bar */
+    .danger-btn.waiting::after {
+        transform: scaleX(1);
+        transition: transform 5s linear;
+    }
+    
+    /* 3 seconds countdown drains the progress bar */
+    .danger-btn.confirm-ready::after {
+        transform: scaleX(0);
+        transition: transform 3s linear;
+        background-color: rgba(239, 68, 68, 0.4) !important;
+    }
+    .danger-btn-filled.confirm-ready::after {
+        background-color: rgba(255, 255, 255, 0.35) !important;
+    }
+
+    .danger-btn.waiting {
+        background-color: rgba(239, 68, 68, 0.05) !important;
+        border-color: rgba(239, 68, 68, 0.4) !important;
+        color: rgb(248, 113, 113) !important;
+        cursor: not-allowed;
+        pointer-events: none;
+        opacity: 0.8;
+    }
+    
+    .danger-btn-filled.waiting {
+        background-color: rgb(185, 28, 28) !important;
+        border-color: rgba(239, 68, 68, 0.4) !important;
+        cursor: not-allowed;
+        pointer-events: none;
+        opacity: 0.8;
+    }
+    
+    .danger-btn.confirm-ready {
+        background-color: rgba(239, 68, 68, 0.2) !important;
+        border-color: rgb(239, 68, 68) !important;
+        color: white !important;
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.6) !important;
+        animation: pulseReady 1.2s infinite;
+    }
+    
+    .danger-btn-filled.confirm-ready {
+        background-color: rgb(220, 38, 38) !important;
+        border-color: rgb(239, 68, 68) !important;
+        box-shadow: 0 0 25px rgba(239, 68, 68, 0.7) !important;
+        animation: pulseReady 1.2s infinite;
+    }
+    
+    /* Silenced / disabled grey styling for resetting / late state */
+    .danger-btn.too-late {
+        background-color: rgba(255, 255, 255, 0.02) !important;
+        border-color: rgba(255, 255, 255, 0.05) !important;
+        color: #9ca3af !important;
+        cursor: not-allowed;
+        pointer-events: none;
+        box-shadow: none !important;
+        animation: none !important;
+        opacity: 0.5;
+    }
+    
+    .danger-btn-filled.too-late {
+        background-color: rgba(255, 255, 255, 0.02) !important;
+        border-color: rgba(255, 255, 255, 0.05) !important;
+        color: #9ca3af !important;
+        cursor: not-allowed;
+        pointer-events: none;
+        box-shadow: none !important;
+        animation: none !important;
+        opacity: 0.5;
+    }
+    
+    @keyframes pulseReady {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.03); }
+    }
+    
+    .btn-text {
+        display: inline-block;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+        position: relative;
+        z-index: 2;
+    }
+    .btn-text.fade-out {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    .btn-text.fade-in {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* Theme-compatible accent styling */
+    .theme-accent-btn {
+        background-color: var(--color-accent) !important;
+        color: var(--color-bg) !important;
+        box-shadow: 0 4px 12px var(--color-accent-glow) !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    
+    .theme-accent-btn:hover:not(:disabled) {
+        filter: brightness(1.1) !important;
+        box-shadow: 0 6px 16px var(--color-accent-glow) !important;
+    }
+    
+    .theme-accent-btn:active:not(:disabled) {
+        opacity: 0.95;
+    }
+    
+    .theme-accent-bg {
+        background-color: var(--color-accent) !important;
+        color: var(--color-bg) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Floating Toast Container -->
+<div id="toast-container" class="fixed bottom-6 right-6 z-[9999] flex flex-col-reverse gap-3 pointer-events-none"></div>
+
+<div class="space-y-8 py-4">
+
+
+    <!-- Main Settings Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Left Sidebar Navigation -->
+        <div class="lg:col-span-1 space-y-4 lg:sticky lg:top-24 self-start">
+            <div class="glass-panel p-4 rounded-2xl border border-white/5 space-y-4">
+                <!-- Sidebar Page Title -->
+                <div class="pb-3 border-b border-white/5 px-3">
+                    <h2 class="text-xs font-mono font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                        <i class="fa-solid fa-user-gear text-brand-accent"></i>Account Settings
+                    </h2>
+                </div>
+                <!-- Group 1: Account -->
+                <div>
+                    <span class="block text-[10px] font-semibold uppercase tracking-wider text-brand-textMuted px-3 mb-2.5">Account</span>
+                    <div class="space-y-1">
+                        <a href="#account-section" class="sidebar-link flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-brand-textMuted hover:text-white hover:bg-white/5 transition-all">
+                            <i class="fa-solid fa-user-gear text-sm w-4 text-center"></i>
+                            <span>Profile Details</span>
+                        </a>
+                        <a href="#password-section" class="sidebar-link flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-brand-textMuted hover:text-white hover:bg-white/5 transition-all">
+                            <i class="fa-solid fa-key text-sm w-4 text-center"></i>
+                            <span>Change Password</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Group 2: Safety & Data -->
+                <div>
+                    <span class="block text-[10px] font-semibold uppercase tracking-wider text-brand-textMuted px-3 mb-2.5">Safety & Data</span>
+                    <div class="space-y-1">
+                        <a href="#danger-section" class="sidebar-link flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-brand-textMuted hover:text-white hover:bg-white/5 transition-all">
+                            <i class="fa-solid fa-triangle-exclamation text-sm w-4 text-center"></i>
+                            <span>Danger Zone</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-panel p-4 rounded-2xl border border-white/5 text-center text-xs text-brand-textMuted space-y-1.5">
+                <i class="fa-solid fa-circle-question text-brand-accent text-sm animate-pulse"></i>
+                <span class="block font-semibold text-white">Keyboard Shortcuts</span>
+                <span class="block text-[10px]">Press <kbd class="px-1.5 py-0.5 rounded bg-white/10 font-mono text-white text-[9px] border border-white/10">Esc</kbd> on this page to quickly return to your test.</span>
+            </div>
+        </div>
+
+        <!-- Right Main Content Panel -->
+        <div class="lg:col-span-3 space-y-6">
+            
+            <!-- Profile Details Section -->
+            <div id="account-section" class="glass-panel p-6 rounded-2xl border border-white/5">
+                <h3 class="text-xs font-mono uppercase tracking-widest text-brand-accentLight mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-user-gear"></i>profile details
+                </h3>
+                <p class="text-xs text-brand-textMuted mb-6">view and update your personal account information.</p>
+                
+                <div class="flex flex-col md:flex-row gap-6 items-start">
+                    <!-- Left Avatar Box -->
+                    <div class="flex-shrink-0 flex flex-col items-center gap-4 bg-[#161626]/40 border border-white/5 p-5 rounded-2xl w-full md:w-48 text-center relative group">
+                        <!-- Avatar Form -->
+                        <form id="avatar-form" method="POST" action="{{ url_for('main.upload_avatar') }}" enctype="multipart/form-data" class="w-full flex flex-col items-center gap-3">
+                            <input type="file" name="avatar" id="avatar-input" class="hidden" accept="image/png, image/jpeg, image/jpg, image/gif">
+                            
+                            <div id="avatar-click-zone" class="w-24 h-24 rounded-full flex items-center justify-center text-white text-4xl font-bold shadow-lg shadow-brand-accent/25 border border-white/10 select-none overflow-hidden relative cursor-pointer group">
+                                {% if current_user.avatar %}
+                                    <img id="avatar-preview-img" src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar) }}" class="w-full h-full object-cover group-hover:scale-110 transition-all duration-300">
+                                {% else %}
+                                    <div id="avatar-placeholder" class="w-full h-full flex items-center justify-center theme-accent-bg">
+                                        {{ current_user.username[0]|upper if current_user.username else '?' }}
+                                    </div>
+                                    <img id="avatar-preview-img" class="w-full h-full object-cover hidden">
+                                {% endif %}
+                                
+                                <!-- Hover Overlay with Camera Icon -->
+                                <div class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                    <i class="fa-solid fa-camera text-lg text-white/90"></i>
+                                    <span class="text-[10px] uppercase tracking-wider text-white/80 font-bold mt-1">Choose</span>
+                                </div>
+                            </div>
+
+                            <!-- Save Photo Button (hidden by default, shown when file selected) -->
+                            <button type="submit" id="avatar-save-btn" class="hidden w-full py-2 rounded-xl theme-accent-btn font-semibold text-xs cursor-pointer">
+                                Save Photo
+                            </button>
+                        </form>
+                        
+                        <div class="w-full">
+                            <span class="block text-xs font-semibold text-white truncate w-full px-1">{{ current_user.username }}</span>
+                            <span class="block text-[9px] text-brand-textMuted uppercase tracking-widest mt-0.5">registered</span>
+                            
+                            <!-- Remove photo button (conditionally hidden) -->
+                            <form id="avatar-remove-form" method="POST" action="{{ url_for('main.remove_avatar') }}" class="{% if not current_user.avatar %}hidden{% endif %} mt-2 pt-2 border-t border-white/5 w-full text-center">
+                                <button type="submit" class="text-[10px] font-semibold text-red-400 hover:text-red-300 transition-colors bg-transparent border-none cursor-pointer p-0">
+                                    Remove Photo
+                                </button>
+                            </form>
+                            
+                            <!-- Cancel Selection button (shown only when a new file is chosen) -->
+                            <button id="avatar-cancel-btn" class="hidden mt-2 pt-2 border-t border-white/5 text-[10px] font-semibold text-brand-textMuted hover:text-white transition-colors bg-transparent border-none cursor-pointer p-0 w-full text-center">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Fields Box with split forms -->
+                    <div class="flex-grow w-full space-y-6">
+                        <!-- Form 1: Username -->
+                        <form id="username-form" method="POST" action="{{ url_for('main.update_profile') }}" class="w-full">
+                            <div>
+                                <label for="profile_username" class="block text-xs font-semibold uppercase tracking-wider text-brand-textMuted mb-2">Username</label>
+                                <div class="flex flex-col sm:flex-row gap-3">
+                                    <div class="relative flex-grow">
+                                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-brand-textMuted">
+                                            <i class="fa-regular fa-user"></i>
+                                        </span>
+                                        <input type="text" name="username" id="profile_username" required value="{{ current_user.username }}"
+                                            class="w-full bg-[#161626]/60 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-sm text-white placeholder-brand-textMuted focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all duration-200">
+                                    </div>
+                                    <button type="submit" class="w-full sm:w-44 flex items-center justify-center py-3 rounded-2xl theme-accent-btn font-semibold transition-all duration-200 active:scale-[0.98] cursor-pointer text-xs whitespace-nowrap">
+                                        <i class="fa-regular fa-floppy-disk mr-2"></i>Update Username
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        <!-- Form 2: Email -->
+                        <form id="email-form" method="POST" action="{{ url_for('main.update_profile') }}" class="w-full">
+                            <div>
+                                <label for="profile_email" class="block text-xs font-semibold uppercase tracking-wider text-brand-textMuted mb-2">Email Address</label>
+                                <div class="flex flex-col sm:flex-row gap-3">
+                                    <div class="relative flex-grow">
+                                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-brand-textMuted">
+                                            <i class="fa-regular fa-envelope"></i>
+                                        </span>
+                                        <input type="email" name="email" id="profile_email" required value="{{ current_user.email }}"
+                                            class="w-full bg-[#161626]/60 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-sm text-white placeholder-brand-textMuted focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all duration-200">
+                                    </div>
+                                    <button type="submit" class="w-full sm:w-44 flex items-center justify-center py-3 rounded-2xl theme-accent-btn font-semibold transition-all duration-200 active:scale-[0.98] cursor-pointer text-xs whitespace-nowrap">
+                                        <i class="fa-regular fa-floppy-disk mr-2"></i>Update Email
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Change Password Section -->
+            <div id="password-section" class="glass-panel p-6 rounded-2xl border border-white/5">
+                <h3 class="text-xs font-mono uppercase tracking-widest text-brand-accentLight mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-key"></i>change password
+                </h3>
+                <p class="text-xs text-brand-textMuted mb-6">update your account security password.</p>
+                
+                <form id="password-form" method="POST" action="{{ url_for('main.change_password') }}" class="space-y-5 w-full">
+                    <div>
+                        <label for="current_password" class="block text-xs font-semibold uppercase tracking-wider text-brand-textMuted mb-2">Current Password</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-brand-textMuted">
+                                <i class="fa-solid fa-lock"></i>
+                            </span>
+                            <input type="password" name="current_password" id="current_password" required placeholder="••••••••"
+                                class="w-full bg-[#161626]/60 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-sm text-white placeholder-brand-textMuted focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all duration-200">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="new_password" class="block text-xs font-semibold uppercase tracking-wider text-brand-textMuted mb-2">New Password</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-brand-textMuted">
+                                <i class="fa-solid fa-key"></i>
+                            </span>
+                            <input type="password" name="new_password" id="new_password" required placeholder="••••••••"
+                                class="w-full bg-[#161626]/60 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-sm text-white placeholder-brand-textMuted focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all duration-200">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="confirm_password" class="block text-xs font-semibold uppercase tracking-wider text-brand-textMuted mb-2">Confirm Password</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-brand-textMuted">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </span>
+                            <input type="password" name="confirm_password" id="confirm_password" required placeholder="••••••••"
+                                class="w-full bg-[#161626]/60 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-sm text-white placeholder-brand-textMuted focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all duration-200">
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end pt-2">
+                        <button type="submit" class="px-6 py-3 rounded-2xl theme-accent-btn font-semibold transition-all duration-200 active:scale-[0.98] cursor-pointer text-xs">
+                            <i class="fa-solid fa-lock-open mr-2"></i>Change Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Danger Zone Section -->
+            <div id="danger-section" class="glass-panel p-6 rounded-2xl border border-red-500/10 bg-red-500/[0.01]">
+                <h3 class="text-xs font-mono uppercase tracking-widest text-red-400 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation"></i>danger zone
+                </h3>
+                <p class="text-xs text-brand-textMuted mb-6">permanent and irreversible actions to your user account and statistics history.</p>
+                
+                <div class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-red-500/[0.02] border border-red-500/5">
+                        <div>
+                            <h4 class="text-sm font-semibold text-white">Clear Typing Statistics History</h4>
+                            <p class="text-xs text-brand-textMuted">Wipe all your past speed test scores. This cannot be undone.</p>
+                        </div>
+                        <form id="clear-history-form" method="POST" action="{{ url_for('main.clear_history') }}">
+                            <button type="submit" class="danger-btn px-4 py-2.5 rounded-xl text-xs font-semibold border border-red-500/25 hover:border-red-500 text-red-400 hover:bg-red-500/10 active:scale-95 transition-all cursor-pointer whitespace-nowrap" data-confirm-text="Click again to Confirm Wiping History" data-wait-text="Think again...">
+                                <span class="btn-text">Clear Typing History</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-red-500/[0.02] border border-red-500/5">
+                        <div>
+                            <h4 class="text-sm font-semibold text-white">Delete User Account</h4>
+                            <p class="text-xs text-brand-textMuted">Permanently delete your profile and database record. Everything will be lost.</p>
+                        </div>
+                        <form id="delete-account-form" method="POST" action="{{ url_for('main.delete_account') }}">
+                            <button type="submit" class="danger-btn danger-btn-filled px-4 py-2.5 rounded-xl text-xs font-semibold bg-red-600 hover:bg-red-500 text-white active:scale-95 transition-all cursor-pointer whitespace-nowrap" data-confirm-text="Confirm Permanent Deletion" data-wait-text="This is permanent...">
+                                <span class="btn-text">Delete Account</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // Floating Toast Notification system helper
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-2xl border backdrop-blur-xl shadow-2xl transition-all duration-300 translate-x-12 opacity-0 pointer-events-auto max-w-sm text-xs font-semibold`;
+            
+            if (type === 'success') {
+                toast.className += ' bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
+                toast.innerHTML = `<i class="fa-solid fa-circle-check text-sm flex-shrink-0"></i><span>${message}</span>`;
+            } else if (type === 'error') {
+                toast.className += ' bg-red-500/10 border-red-500/30 text-red-400';
+                toast.innerHTML = `<i class="fa-solid fa-circle-exclamation text-sm flex-shrink-0"></i><span>${message}</span>`;
+            } else {
+                toast.className += ' bg-blue-500/10 border-blue-500/30 text-blue-400';
+                toast.innerHTML = `<i class="fa-solid fa-circle-info text-sm flex-shrink-0"></i><span>${message}</span>`;
+            }
+            
+            container.appendChild(toast);
+            
+            // Trigger entry transition
+            setTimeout(() => {
+                toast.classList.remove('translate-x-12', 'opacity-0');
+            }, 10);
+            
+            // Auto-remove toast
+            setTimeout(() => {
+                toast.classList.add('translate-x-12', 'opacity-0');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 4000);
+        }
+
+        // Generic AJAX form submit helper
+        async function submitFormAjax(form, submitBtn, successCallback) {
+            const url = form.getAttribute('action') || window.location.href;
+            const formData = new FormData(form);
+            
+            const originalBtnContent = submitBtn ? submitBtn.innerHTML : null;
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.7';
+                submitBtn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin mr-2"></i>Processing...`;
+            }
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'success') {
+                    showToast(data.message, 'success');
+                    if (successCallback) successCallback(data);
+                } else {
+                    showToast(data.message || 'An error occurred.', 'error');
+                }
+            } catch (error) {
+                showToast('Network error. Please check your connection.', 'error');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = '1';
+                    submitBtn.innerHTML = originalBtnContent;
+                }
+            }
+        }
+
+        // Dynamic sidebar highlights on scrolling sections
+        const sidebarLinks = document.querySelectorAll('.sidebar-link');
+        const sections = document.querySelectorAll('#account-section, #password-section, #danger-section');
+
+        window.addEventListener('scroll', () => {
+            let currentSec = "";
+            sections.forEach(sec => {
+                const rect = sec.getBoundingClientRect();
+                const absoluteTop = rect.top + window.pageYOffset;
+                if (window.pageYOffset >= absoluteTop - 150) {
+                    currentSec = sec.getAttribute('id');
+                }
+            });
+
+            // Force select last section if scrolled to absolute bottom
+            if (window.innerHeight + window.pageYOffset >= document.documentElement.scrollHeight - 50) {
+                currentSec = sections[sections.length - 1].getAttribute('id');
+            }
+
+            sidebarLinks.forEach(link => {
+                link.classList.remove('text-brand-accent', 'bg-brand-accent/10');
+                link.classList.add('text-brand-textMuted');
+                
+                if (link.getAttribute('href') === `#${currentSec}`) {
+                    link.classList.remove('text-brand-textMuted');
+                    link.classList.add('text-brand-accent', 'bg-brand-accent/10');
+                }
+            });
+        });
+
+        // Smooth scroll sections into viewport center upon clicking sidebar link
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                const targetId = link.getAttribute('href');
+                if (targetId.startsWith('#')) {
+                    const targetSection = document.querySelector(targetId);
+                    if (targetSection) {
+                        e.preventDefault();
+                        targetSection.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                        history.pushState(null, null, targetId);
+                    }
+                }
+            });
+        });
+
+        // Form 1: Username AJAX submission
+        const usernameForm = document.getElementById('username-form');
+        if (usernameForm) {
+            usernameForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                submitFormAjax(usernameForm, usernameForm.querySelector('button[type="submit"]'), (data) => {
+                    // Update header navbar username
+                    const navSpan = document.querySelector('[title="Account Settings"] span');
+                    if (navSpan) navSpan.textContent = data.username;
+                    
+                    // Update left avatar card username
+                    const cardSpan = document.querySelector('.flex-shrink-0 span.font-semibold');
+                    if (cardSpan) cardSpan.textContent = data.username;
+                    
+                    // Update fallback initials text
+                    const placeholder = document.getElementById('avatar-placeholder');
+                    if (placeholder) placeholder.textContent = data.username[0].toUpperCase();
+                    
+                    // Update navbar fallback initials text
+                    const navPlaceholder = document.getElementById('nav-avatar-placeholder');
+                    if (navPlaceholder) navPlaceholder.textContent = data.username[0].toUpperCase();
+                });
+            });
+        }
+
+        // Form 2: Email AJAX submission
+        const emailForm = document.getElementById('email-form');
+        if (emailForm) {
+            emailForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                submitFormAjax(emailForm, emailForm.querySelector('button[type="submit"]'));
+            });
+        }
+
+        // Form 3: Password AJAX submission
+        const passwordForm = document.getElementById('password-form');
+        if (passwordForm) {
+            passwordForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                submitFormAjax(passwordForm, passwordForm.querySelector('button[type="submit"]'), () => {
+                    passwordForm.reset();
+                });
+            });
+        }
+
+        // Forced cooling-off confirmation logic for danger zone buttons (with AJAX submission)
+        const dangerForms = document.querySelectorAll('#danger-section form');
+        dangerForms.forEach(form => {
+            const button = form.querySelector('button');
+            const span = button.querySelector('.btn-text');
+            const initialText = span.textContent;
+            const confirmText = button.dataset.confirmText || "Are you sure? Click again!";
+            const waitTextPrefix = button.dataset.waitText || "Wait...";
+            
+            let isWaiting = false;
+            let isReady = false;
+            let countdownInterval = null;
+            let readyInterval = null;
+            let readyTimeout = null;
+            
+            form.addEventListener('submit', (e) => {
+                if (!isWaiting && !isReady) {
+                    // First click: Start cooling period
+                    e.preventDefault();
+                    isWaiting = true;
+                    button.classList.add('waiting');
+                    
+                    let secondsLeft = 5;
+                    
+                    // Animate text out and in
+                    span.classList.add('fade-out');
+                    setTimeout(() => {
+                        span.textContent = `${waitTextPrefix} ${secondsLeft}s`;
+                        span.classList.remove('fade-out');
+                        span.classList.add('fade-in');
+                    }, 200);
+                    
+                    // Countdown interval
+                    countdownInterval = setInterval(() => {
+                        secondsLeft--;
+                        if (secondsLeft > 0) {
+                            span.textContent = `${waitTextPrefix} ${secondsLeft}s`;
+                        } else {
+                            clearInterval(countdownInterval);
+                            isWaiting = false;
+                            isReady = true;
+                            button.classList.remove('waiting');
+                            button.classList.add('confirm-ready');
+                            
+                            let confirmSecondsLeft = 3;
+                            
+                            // Change text to the second click action with countdown
+                            span.classList.remove('fade-in');
+                            span.classList.add('fade-out');
+                            setTimeout(() => {
+                                span.textContent = `${confirmText} (${confirmSecondsLeft}s)`;
+                                span.classList.remove('fade-out');
+                                span.classList.add('fade-in');
+                            }, 200);
+                            
+                            // 3-second countdown interval
+                            readyInterval = setInterval(() => {
+                                confirmSecondsLeft--;
+                                if (confirmSecondsLeft > 0) {
+                                    span.textContent = `${confirmText} (${confirmSecondsLeft}s)`;
+                                } else {
+                                    clearInterval(readyInterval);
+                                }
+                            }, 1000);
+                            
+                            // 3-second expiration timeout
+                            readyTimeout = setTimeout(() => {
+                                isReady = false;
+                                button.classList.remove('confirm-ready');
+                                button.classList.add('too-late');
+                                
+                                // Animate "Too late!" text
+                                span.classList.remove('fade-in');
+                                span.classList.add('fade-out');
+                                setTimeout(() => {
+                                    span.textContent = "Too late! Resetting...";
+                                    span.classList.remove('fade-out');
+                                    span.classList.add('fade-in');
+                                }, 200);
+                                
+                                // Revert to initial state after 2 seconds
+                                setTimeout(() => {
+                                    button.classList.remove('too-late');
+                                    resetButton();
+                                }, 2000);
+                            }, 3000);
+                        }
+                    }, 1000);
+                } else if (isWaiting) {
+                    // Prevent submission during waiting
+                    e.preventDefault();
+                } else if (isReady) {
+                    // Second click: Submit form via AJAX
+                    e.preventDefault();
+                    if (readyInterval) clearInterval(readyInterval);
+                    if (readyTimeout) clearTimeout(readyTimeout);
+                    
+                    button.disabled = true;
+                    button.classList.remove('confirm-ready');
+                    const originalBtnText = span.textContent;
+                    span.textContent = "Processing...";
+                    
+                    const action = form.getAttribute('action');
+                    fetch(action, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            showToast(data.message, 'success');
+                            if (action.includes('delete-account')) {
+                                setTimeout(() => {
+                                    window.location.href = "{{ url_for('main.index') }}";
+                                }, 1500);
+                            } else {
+                                resetButton();
+                            }
+                        } else {
+                            showToast(data.message || 'An error occurred.', 'error');
+                            button.disabled = false;
+                            span.textContent = originalBtnText;
+                            resetButton();
+                        }
+                    })
+                    .catch(err => {
+                        showToast('Network error.', 'error');
+                        button.disabled = false;
+                        span.textContent = originalBtnText;
+                        resetButton();
+                    });
+                }
+            });
+            
+            // Reset if user clicks anywhere else
+            document.addEventListener('click', (event) => {
+                if (!form.contains(event.target) && (isWaiting || isReady)) {
+                    resetButton();
+                }
+            });
+            
+            function resetButton() {
+                isWaiting = false;
+                isReady = false;
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                }
+                if (readyInterval) {
+                    clearInterval(readyInterval);
+                    readyInterval = null;
+                }
+                if (readyTimeout) {
+                    clearTimeout(readyTimeout);
+                    readyTimeout = null;
+                }
+                button.classList.remove('waiting', 'confirm-ready', 'too-late');
+                span.classList.remove('fade-in');
+                span.classList.add('fade-out');
+                
+                setTimeout(() => {
+                    span.textContent = initialText;
+                    span.classList.remove('fade-out');
+                    span.classList.add('fade-in');
+                }, 200);
+            }
+        });
+
+        // Avatar trigger, instant local preview and AJAX save
+        const avatarClickZone = document.getElementById('avatar-click-zone');
+        const avatarInput = document.getElementById('avatar-input');
+        const avatarForm = document.getElementById('avatar-form');
+        const avatarSaveBtn = document.getElementById('avatar-save-btn');
+        const avatarCancelBtn = document.getElementById('avatar-cancel-btn');
+        const avatarRemoveForm = document.getElementById('avatar-remove-form');
+        const avatarPreviewImg = document.getElementById('avatar-preview-img');
+        const avatarPlaceholder = document.getElementById('avatar-placeholder');
+        
+        let originalAvatarSrc = avatarPreviewImg ? avatarPreviewImg.src : null;
+        let originalHasAvatar = {% if current_user.avatar %}true{% else %}false{% endif %};
+        
+        if (avatarClickZone && avatarInput) {
+            avatarClickZone.addEventListener('click', () => {
+                avatarInput.click();
+            });
+            
+            avatarInput.addEventListener('change', () => {
+                if (avatarInput.files.length > 0) {
+                    const file = avatarInput.files[0];
+                    const fileUrl = URL.createObjectURL(file);
+                    
+                    // Show preview
+                    if (avatarPreviewImg) {
+                        avatarPreviewImg.src = fileUrl;
+                        avatarPreviewImg.classList.remove('hidden');
+                    }
+                    if (avatarPlaceholder) {
+                        avatarPlaceholder.classList.add('hidden');
+                    }
+                    
+                    // Show Save and Cancel buttons
+                    avatarSaveBtn.classList.remove('hidden');
+                    avatarCancelBtn.classList.remove('hidden');
+                    
+                    // Hide Remove button
+                    if (avatarRemoveForm) {
+                        avatarRemoveForm.classList.add('hidden');
+                    }
+                }
+            });
+            
+            avatarCancelBtn.addEventListener('click', () => {
+                avatarInput.value = "";
+                
+                if (originalHasAvatar) {
+                    if (avatarPreviewImg) {
+                        avatarPreviewImg.src = originalAvatarSrc;
+                        avatarPreviewImg.classList.remove('hidden');
+                    }
+                } else {
+                    if (avatarPreviewImg) {
+                        avatarPreviewImg.classList.add('hidden');
+                    }
+                    if (avatarPlaceholder) {
+                        avatarPlaceholder.classList.remove('hidden');
+                    }
+                }
+                
+                avatarSaveBtn.classList.add('hidden');
+                avatarCancelBtn.classList.add('hidden');
+                
+                if (originalHasAvatar && avatarRemoveForm) {
+                    avatarRemoveForm.classList.remove('hidden');
+                }
+            });
+            
+            // Avatar Form AJAX Submit handler
+            avatarForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                submitFormAjax(avatarForm, avatarSaveBtn, (data) => {
+                    originalHasAvatar = true;
+                    originalAvatarSrc = data.url;
+                    
+                    avatarSaveBtn.classList.add('hidden');
+                    avatarCancelBtn.classList.add('hidden');
+                    
+                    if (avatarPreviewImg) {
+                        avatarPreviewImg.src = data.url;
+                        avatarPreviewImg.classList.remove('hidden');
+                    }
+                    
+                    if (avatarRemoveForm) {
+                        avatarRemoveForm.classList.remove('hidden');
+                    }
+                    
+                    // Update global navbar profile image dynamically
+                    const navAvatarLink = document.querySelector('[title="Account Settings"]');
+                    if (navAvatarLink) {
+                        let navImg = navAvatarLink.querySelector('img');
+                        let navPlaceholder = document.getElementById('nav-avatar-placeholder');
+                        if (!navImg) {
+                            navImg = document.createElement('img');
+                            navImg.className = 'w-7 h-7 rounded-full object-cover';
+                            navAvatarLink.insertBefore(navImg, navAvatarLink.firstChild);
+                        }
+                        navImg.src = data.url;
+                        navImg.classList.remove('hidden');
+                        if (navPlaceholder) navPlaceholder.remove();
+                    }
+                });
+            });
+        }
+
+        // Avatar Remove AJAX Submit handler
+        if (avatarRemoveForm) {
+            avatarRemoveForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                submitFormAjax(avatarRemoveForm, avatarRemoveForm.querySelector('button[type="submit"]'), () => {
+                    originalHasAvatar = false;
+                    originalAvatarSrc = null;
+                    avatarInput.value = "";
+                    
+                    if (avatarPreviewImg) {
+                        avatarPreviewImg.classList.add('hidden');
+                        avatarPreviewImg.src = "";
+                    }
+                    if (avatarPlaceholder) {
+                        avatarPlaceholder.classList.remove('hidden');
+                    }
+                    
+                    avatarRemoveForm.classList.add('hidden');
+                    avatarSaveBtn.classList.add('hidden');
+                    avatarCancelBtn.classList.add('hidden');
+                    
+                    // Reset global navbar profile image dynamically to fallback letter initials
+                    const navAvatarLink = document.querySelector('[title="Account Settings"]');
+                    if (navAvatarLink) {
+                        const navImg = navAvatarLink.querySelector('img');
+                        if (navImg) navImg.remove();
+                        
+                        let navPlaceholder = document.getElementById('nav-avatar-placeholder');
+                        if (!navPlaceholder) {
+                            navPlaceholder = document.createElement('div');
+                            navPlaceholder.id = 'nav-avatar-placeholder';
+                            navPlaceholder.className = 'w-7 h-7 rounded-full bg-gradient-to-tr from-brand-accent to-indigo-600 flex items-center justify-center text-xs font-bold text-white uppercase flex-shrink-0 select-none';
+                            navAvatarLink.insertBefore(navPlaceholder, navAvatarLink.firstChild);
+                        }
+                        const currentUsername = document.querySelector('.flex-shrink-0 span.font-semibold')?.textContent || 'U';
+                        navPlaceholder.textContent = currentUsername[0].toUpperCase();
+                    }
+                });
+            });
+        }
+        
+        // Listen Esc key to return to test
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                window.location.href = "{{ url_for('main.index') }}";
+            }
+        });
+    });
+</script>
+{% endblock %}

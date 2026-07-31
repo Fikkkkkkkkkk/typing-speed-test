@@ -24,29 +24,110 @@
         0%, 100% { opacity: 0.15; }
         50% { opacity: 1; }
     }
+
+    /* Danger confirmation button animations */
+    .danger-btn {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1;
+    }
+    
+    /* Progress bar overlay inside button background */
+    .danger-btn::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background-color: rgba(239, 68, 68, 0.25);
+        transform: scaleX(0);
+        transform-origin: left;
+        z-index: 0;
+        pointer-events: none;
+        transition: none;
+    }
+    
+    /* 5 seconds wait fills the progress bar */
+    .danger-btn.waiting::after {
+        transform: scaleX(1);
+        transition: transform 5s linear;
+    }
+    
+    /* 3 seconds countdown drains the progress bar */
+    .danger-btn.confirm-ready::after {
+        transform: scaleX(0);
+        transition: transform 3s linear;
+        background-color: rgba(239, 68, 68, 0.4) !important;
+    }
+
+    .danger-btn.waiting {
+        background-color: rgba(239, 68, 68, 0.05) !important;
+        border-color: rgba(239, 68, 68, 0.4) !important;
+        color: rgb(248, 113, 113) !important;
+        cursor: not-allowed;
+        pointer-events: none;
+        opacity: 0.8;
+    }
+    
+    .danger-btn.confirm-ready {
+        background-color: rgba(239, 68, 68, 0.2) !important;
+        border-color: rgb(239, 68, 68) !important;
+        color: white !important;
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.6) !important;
+        animation: pulseReady 1.2s infinite;
+    }
+    
+    /* Silenced / disabled grey styling for resetting / late state */
+    .danger-btn.too-late {
+        background-color: rgba(255, 255, 255, 0.02) !important;
+        border-color: rgba(255, 255, 255, 0.05) !important;
+        color: #9ca3af !important;
+        cursor: not-allowed;
+        pointer-events: none;
+        box-shadow: none !important;
+        animation: none !important;
+        opacity: 0.5;
+    }
+    
+    @keyframes pulseReady {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.03); }
+    }
+    
+    .btn-text {
+        display: inline-block;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    
+    .btn-text.fade-out {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    
+    .btn-text.fade-in {
+        opacity: 1;
+        transform: translateY(0);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="space-y-8 py-4">
-    <!-- Header (Matching Dashboard Layout) -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6">
-        <div>
-            <h1 class="text-3xl font-bold tracking-tight text-white mb-1">Settings</h1>
-            <p class="text-brand-textMuted text-sm">Configure your personal typing experience, visual themes, and sound feedback</p>
-        </div>
-        <div>
-            <a href="{{ url_for('main.index') }}" class="px-4 py-2.5 bg-brand-accent hover:bg-brand-accentLight text-white text-sm font-semibold rounded-xl transition-all duration-200 shadow-md shadow-brand-accent/25 hover:shadow-brand-accent/40 active:scale-[0.98]">
-                <i class="fa-solid fa-play mr-2"></i>Back to Test
-            </a>
-        </div>
-    </div>
+
 
     <!-- Main Settings Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <!-- Left Sidebar Navigation -->
-        <div class="lg:col-span-1 space-y-4">
+        <div class="lg:col-span-1 space-y-4 lg:sticky lg:top-24 self-start">
             <div class="glass-panel p-4 rounded-2xl border border-white/5 space-y-4">
+                <!-- Sidebar Page Title -->
+                <div class="pb-3 border-b border-white/5 px-3">
+                    <h2 class="text-xs font-mono font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-brand-accent"></i>Preferences
+                    </h2>
+                </div>
                 <!-- Group 1: Test Behavior -->
                 <div>
                     <span class="block text-[10px] font-semibold uppercase tracking-wider text-brand-textMuted px-3 mb-2.5">test behavior</span>
@@ -221,12 +302,18 @@
                 <h3 class="text-xs font-mono uppercase tracking-widest text-red-400 mb-2 flex items-center gap-2">
                     <i class="fa-solid fa-triangle-exclamation"></i>danger zone
                 </h3>
-                <p class="text-xs text-brand-textMuted mb-6">permanent actions to clear application state. you can reset your local preferences to fresh app defaults.</p>
+                <p class="text-xs text-brand-textMuted mb-6">permanent actions to clear application state.</p>
                 
-                <div class="flex flex-wrap gap-4">
-                    <button id="reset-prefs-btn" class="px-4 py-2.5 rounded-xl text-xs font-semibold border border-red-500/25 hover:border-red-500 text-red-400 hover:bg-red-500/10 active:scale-95 transition-all cursor-pointer">
-                        Reset Preferences to Default
-                    </button>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-red-500/[0.02] border border-red-500/5">
+                    <div>
+                        <h4 class="text-sm font-semibold text-white">Reset Local Preferences</h4>
+                        <p class="text-xs text-brand-textMuted">Reset your theme, sound options, spacing, caret style, and font to defaults.</p>
+                    </div>
+                    <form id="reset-prefs-form" class="flex-shrink-0">
+                        <button type="submit" id="reset-prefs-btn" class="danger-btn px-4 py-2.5 rounded-xl text-xs font-semibold border border-red-500/25 hover:border-red-500 text-red-400 hover:bg-red-500/10 active:scale-95 transition-all cursor-pointer whitespace-nowrap" data-confirm-text="Click again to Confirm Reset" data-wait-text="Think again...">
+                            <span class="btn-text">Reset Preferences to Default</span>
+                        </button>
+                    </form>
                 </div>
             </div>
 
@@ -421,20 +508,153 @@
             });
         });
 
-        // Danger zone clear preferences handler
-        const resetPrefsBtn = document.getElementById('reset-prefs-btn');
-        if (resetPrefsBtn) {
-            resetPrefsBtn.addEventListener('click', () => {
-                if (confirm('Are you sure you want to reset all preferences to default settings?')) {
+        // Forced cooling-off confirmation logic for danger zone buttons (local storage reset)
+        const dangerForms = document.querySelectorAll('#danger-section form');
+        dangerForms.forEach(form => {
+            const button = form.querySelector('button');
+            const span = button.querySelector('.btn-text');
+            const initialText = span.textContent;
+            const confirmText = button.dataset.confirmText || "Are you sure? Click again!";
+            const waitTextPrefix = button.dataset.waitText || "Wait...";
+            
+            let isWaiting = false;
+            let isReady = false;
+            let countdownInterval = null;
+            let readyInterval = null;
+            let readyTimeout = null;
+            
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                if (!isWaiting && !isReady) {
+                    // First click: Start cooling period
+                    isWaiting = true;
+                    button.classList.add('waiting');
+                    
+                    let secondsLeft = 5;
+                    
+                    // Animate text out and in
+                    span.classList.add('fade-out');
+                    setTimeout(() => {
+                        span.textContent = `${waitTextPrefix} ${secondsLeft}s`;
+                        span.classList.remove('fade-out');
+                        span.classList.add('fade-in');
+                    }, 200);
+                    
+                    // Countdown interval
+                    countdownInterval = setInterval(() => {
+                        secondsLeft--;
+                        if (secondsLeft > 0) {
+                            span.textContent = `${waitTextPrefix} ${secondsLeft}s`;
+                        } else {
+                            clearInterval(countdownInterval);
+                            isWaiting = false;
+                            isReady = true;
+                            button.classList.remove('waiting');
+                            button.classList.add('confirm-ready');
+                            
+                            let confirmSecondsLeft = 3;
+                            
+                            // Change text to the second click action with countdown
+                            span.classList.remove('fade-in');
+                            span.classList.add('fade-out');
+                            setTimeout(() => {
+                                span.textContent = `${confirmText} (${confirmSecondsLeft}s)`;
+                                span.classList.remove('fade-out');
+                                span.classList.add('fade-in');
+                            }, 200);
+                            
+                            // 3-second countdown interval
+                            readyInterval = setInterval(() => {
+                                confirmSecondsLeft--;
+                                if (confirmSecondsLeft > 0) {
+                                    span.textContent = `${confirmText} (${confirmSecondsLeft}s)`;
+                                } else {
+                                    clearInterval(readyInterval);
+                                }
+                            }, 1000);
+                            
+                            // 3-second expiration timeout
+                            readyTimeout = setTimeout(() => {
+                                isReady = false;
+                                button.classList.remove('confirm-ready');
+                                button.classList.add('too-late');
+                                
+                                // Animate "Too late!" text
+                                span.classList.remove('fade-in');
+                                span.classList.add('fade-out');
+                                setTimeout(() => {
+                                    span.textContent = "Too late! Resetting...";
+                                    span.classList.remove('fade-out');
+                                    span.classList.add('fade-in');
+                                }, 200);
+                                
+                                // Revert to initial state after 2 seconds
+                                setTimeout(() => {
+                                    button.classList.remove('too-late');
+                                    resetButton();
+                                }, 2000);
+                            }, 3000);
+                        }
+                    }, 1000);
+                } else if (isWaiting) {
+                    e.preventDefault();
+                } else if (isReady) {
+                    // Second click: Confirm reset action
+                    if (readyInterval) clearInterval(readyInterval);
+                    if (readyTimeout) clearTimeout(readyTimeout);
+                    
+                    button.disabled = true;
+                    button.classList.remove('confirm-ready');
+                    span.textContent = "Resetting...";
+                    
+                    // Clear local storage preferences
                     localStorage.removeItem('typopulse-theme');
                     localStorage.removeItem('typopulse-caret');
                     localStorage.removeItem('typopulse-font');
                     localStorage.removeItem('typopulse-sound');
                     localStorage.removeItem('typopulse-spacing');
-                    window.location.reload();
+                    
+                    // Reload page after a brief delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 500);
                 }
             });
-        }
+            
+            // Reset if user clicks anywhere else
+            document.addEventListener('click', (event) => {
+                if (!form.contains(event.target) && (isWaiting || isReady)) {
+                    resetButton();
+                }
+            });
+            
+            function resetButton() {
+                isWaiting = false;
+                isReady = false;
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                }
+                if (readyInterval) {
+                    clearInterval(readyInterval);
+                    readyInterval = null;
+                }
+                if (readyTimeout) {
+                    clearTimeout(readyTimeout);
+                    readyTimeout = null;
+                }
+                button.classList.remove('waiting', 'confirm-ready', 'too-late');
+                span.classList.remove('fade-in');
+                span.classList.add('fade-out');
+                
+                setTimeout(() => {
+                    span.textContent = initialText;
+                    span.classList.remove('fade-out');
+                    span.classList.add('fade-in');
+                }, 200);
+            }
+        });
 
         // Set active/inactive Tailwind classes dynamically
         function setActivePill(buttonGroup, activeValue, type) {
@@ -556,11 +776,17 @@
         window.addEventListener('scroll', () => {
             let currentSec = "";
             sections.forEach(sec => {
-                const secTop = sec.offsetTop;
-                if (pageYOffset >= secTop - 120) {
+                const rect = sec.getBoundingClientRect();
+                const absoluteTop = rect.top + window.pageYOffset;
+                if (window.pageYOffset >= absoluteTop - 150) {
                     currentSec = sec.getAttribute('id');
                 }
             });
+
+            // Force select last section if scrolled to absolute bottom
+            if (window.innerHeight + window.pageYOffset >= document.documentElement.scrollHeight - 50) {
+                currentSec = sections[sections.length - 1].getAttribute('id');
+            }
 
             sidebarLinks.forEach(link => {
                 link.classList.remove('text-brand-accent', 'bg-brand-accent/10');
@@ -569,6 +795,24 @@
                 if (link.getAttribute('href') === `#${currentSec}`) {
                     link.classList.remove('text-brand-textMuted');
                     link.classList.add('text-brand-accent', 'bg-brand-accent/10');
+                }
+            });
+        });
+
+        // Smooth scroll sections into viewport center upon clicking sidebar link
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                const targetId = link.getAttribute('href');
+                if (targetId.startsWith('#')) {
+                    const targetSection = document.querySelector(targetId);
+                    if (targetSection) {
+                        e.preventDefault();
+                        targetSection.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                        history.pushState(null, null, targetId);
+                    }
                 }
             });
         });

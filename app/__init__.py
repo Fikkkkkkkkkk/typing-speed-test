@@ -45,5 +45,12 @@ def create_app():
             db.session.commit()
         except Exception:
             db.session.rollback()
+            
+        # SQLite migration to add avatar column if not exists
+        try:
+            db.session.execute(text('ALTER TABLE users ADD COLUMN avatar VARCHAR(256) DEFAULT NULL'))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
         
     return app
