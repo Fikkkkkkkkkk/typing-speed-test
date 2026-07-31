@@ -1,6 +1,6 @@
 # ⌨️ TypoPulse — Premium Typing Speed Test
 
-TypoPulse is a high-fidelity, responsive typing speed test application inspired by Monkeytype. Built as a portfolio project, it demonstrates a complete full-stack workflow combining a Python **Flask** backend, **SQLite** database records, **Tailwind CSS v3** modern interface design, and **Chart.js** data visualizations.
+TypoPulse is a high-fidelity, responsive typing speed test application inspired by Monkeytype. Built as a portfolio project, it demonstrates a complete full-stack workflow combining a Python **Flask** backend (utilizing the **Application Factory** and **Blueprint** patterns), **SQLite** database records, **Tailwind CSS v3** modern interface design, and **Chart.js** data visualizations.
 
 ---
 
@@ -18,7 +18,7 @@ TypoPulse is a high-fidelity, responsive typing speed test application inspired 
 
 ## 🛠️ Technology Stack
 
-*   **Backend:** Python 3.10+, Flask, Flask-SQLAlchemy, Flask-Login
+*   **Backend:** Python 3.10+, Flask (Application Factory & Blueprints), Flask-SQLAlchemy, Flask-Login
 *   **Frontend:** HTML5, Tailwind CSS v3 (Play CDN), FontAwesome Icons
 *   **Database:** SQLite (file-based database)
 *   **Charts:** Chart.js v4+
@@ -30,24 +30,36 @@ TypoPulse is a high-fidelity, responsive typing speed test application inspired 
 ```text
 Typing SpeedTest/
 │
-├── app.py                # Main server file (routing, API endpoints, config)
-├── models.py             # SQLAlchemy models (User & TestResult schemas)
+├── run.py                 # Application entrypoint (calls create_app())
 ├── requirements.txt      # Python dependencies
 ├── .env                  # Environment configurations
 ├── .gitignore            # Git exclusion rules
 │
-├── static/
-│   ├── data/
-│   │   └── words.json    # JSON dictionary containing standard test words
-│   └── js/
-│       └── app.js        # Core typing test client-side engine
-│
-└── templates/
-    ├── base.html         # Master template layout (glowing dark theme & navbar)
-    ├── index.html        # Main typing speed test interface
-    ├── dashboard.html    # Statistics logging & performance history graphs
-    ├── login.html        # Authentication forms
-    └── register.html     # User registration forms
+└── app/                  # Core application package
+    ├── __init__.py        # Application Factory (creates app, binds extensions & blueprints)
+    ├── extensions.py      # Shared Flask extensions (prevents circular imports)
+    ├── models.py          # SQLAlchemy models (User & TestResult schemas)
+    │
+    ├── auth/              # Authentication Blueprint
+    │   ├── __init__.py    # Blueprint definition
+    │   └── routes.py      # Login, Register, Logout routes
+    │
+    ├── main/              # Main App Blueprint
+    │   ├── __init__.py    # Blueprint definition
+    │   └── routes.py      # Core typing logic rendering, dashboard and API endpoints
+    │
+    ├── static/            # Static assets
+    │   ├── data/
+    │   │   └── words.json # JSON dictionary containing standard test words
+    │   └── js/
+    │       └── app.js     # Core typing test client-side engine
+    │
+    └── templates/         # HTML Jinja2 Templates
+        ├── base.html      # Master template layout (glowing dark theme & navbar)
+        ├── index.html     # Main typing speed test interface
+        ├── dashboard.html # Statistics logging & performance history graphs
+        ├── login.html     # Authentication forms
+        └── register.html  # User registration forms
 ```
 
 ---
@@ -81,7 +93,7 @@ pip install -r requirements.txt
 
 ### 4. Run the Application
 ```bash
-python app.py
+python run.py
 ```
 
 The server will initialize the local database file `instance/typing_test.db` and start running. Open your browser and navigate to:
