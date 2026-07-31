@@ -93,13 +93,37 @@
     <div id="test-card" class="w-full max-w-7xl glass-panel rounded-3xl p-8 transition-all duration-300 relative border border-white/5 glow-accent">
         
         <!-- Top Toolbar -->
-        <div id="toolbar" class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-white/5 pb-4">
-            <!-- Duration selectors -->
-            <div class="flex items-center space-x-1 bg-white/5 p-1 rounded-xl border border-white/5">
-                <span class="text-xs text-brand-textMuted px-3 py-1.5 font-mono uppercase tracking-wider">Duration</span>
-                <button class="time-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent bg-brand-accent/10" data-time="15">15s</button>
-                <button class="time-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-time="30">30s</button>
-                <button class="time-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-time="60">60s</button>
+        <div id="toolbar" class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-white/5 pb-4">
+            <div class="flex flex-wrap items-center gap-4">
+                <!-- Mode Toggle (Time vs Words) -->
+                <div class="flex items-center space-x-1 bg-white/5 p-1 rounded-xl border border-white/5">
+                    <button id="mode-time-btn" class="mode-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent bg-brand-accent/10" data-mode="time">
+                        <i class="fa-regular fa-clock mr-1.5"></i>time
+                    </button>
+                    <button id="mode-words-btn" class="mode-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-mode="words">
+                        <i class="fa-solid fa-font mr-1.5"></i>words
+                    </button>
+                </div>
+
+                <!-- Spacer separator line -->
+                <div class="hidden sm:block h-6 w-[1px] bg-white/5"></div>
+
+                <!-- Duration settings -->
+                <div id="time-config" class="flex items-center space-x-1 bg-white/5 p-1 rounded-xl border border-white/5">
+                    <span class="text-xs text-brand-textMuted px-3 py-1.5 font-mono uppercase tracking-wider">Duration</span>
+                    <button class="time-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-time="15">15s</button>
+                    <button class="time-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent bg-brand-accent/10" data-time="30">30s</button>
+                    <button class="time-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-time="60">60s</button>
+                </div>
+
+                <!-- Words settings (initially hidden) -->
+                <div id="words-config" class="flex items-center space-x-1 bg-white/5 p-1 rounded-xl border border-white/5 hidden">
+                    <span class="text-xs text-brand-textMuted px-3 py-1.5 font-mono uppercase tracking-wider">Word Limit</span>
+                    <button class="word-limit-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-words="10">10</button>
+                    <button class="word-limit-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent bg-brand-accent/10" data-words="25">25</button>
+                    <button class="word-limit-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-words="50">50</button>
+                    <button class="word-limit-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-words="100">100</button>
+                </div>
             </div>
             
             <!-- Instructions/Status -->
@@ -129,10 +153,10 @@
 
             <!-- Words area -->
             <div class="words-wrapper leading-loose tracking-wide overflow-hidden" id="words-container">
-                <!-- Smooth caret cursor -->
-                <div id="caret" class="blinking"></div>
                 <!-- Dynamic words list populated via Javascript -->
-                <div id="words-list" class="flex flex-wrap w-full select-none">
+                <div id="words-list" class="flex flex-wrap w-full select-none relative">
+                    <!-- Smooth caret cursor -->
+                    <div id="caret" class="blinking"></div>
                     <span class="text-brand-textMuted py-4">Loading words...</span>
                 </div>
             </div>

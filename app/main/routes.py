@@ -23,6 +23,15 @@ def dashboard():
     pb_wpm = db.session.query(db.func.max(TestResult.wpm)).filter_by(user_id=current_user.id).scalar() or 0
     pb_accuracy = db.session.query(db.func.max(TestResult.accuracy)).filter_by(user_id=current_user.id).scalar() or 0
     
+    # Calculate additional user statistics
+    test_completed = total_tests
+    test_started = max(current_user.started_tests, test_completed)
+    
+    total_seconds = sum(r.duration for r in results)
+    minutes = total_seconds // 60
+    seconds = total_seconds % 60
+    test_time_str = f"{minutes}m {seconds}s" if minutes > 0 else f"{seconds}s"
+    
     return render_template(
         'dashboard.html', 
         results=results, 
@@ -30,7 +39,10 @@ def dashboard():
         avg_wpm=round(avg_wpm, 1),
         avg_accuracy=round(avg_accuracy, 1),
         pb_wpm=round(pb_wpm, 1),
-        pb_accuracy=round(pb_accuracy, 1)
+        pb_accuracy=round(pb_accuracy, 1),
+        test_started=test_started,
+        test_completed=test_completed,
+        test_time=test_time_str
     )
 
 @main_bp.route('/api/words')
@@ -52,6 +64,13 @@ def get_words():
         selected.append(random.choice(words_pool))
         
     return jsonify(selected)
+
+@main_bp.route('/api/test/start', methods=['POST'])
+def start_test_api():
+    if current_user.is_authenticated:
+        current_user.started_tests += 1
+        db.session.commit()
+    return jsonify({'status': 'success'})
 
 @main_bp.route('/api/test/save', methods=['POST'])
 def save_test():

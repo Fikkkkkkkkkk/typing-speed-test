@@ -1,6 +1,7 @@
 import os
 from flask import Flask
 from dotenv import load_dotenv
+from sqlalchemy import text
 from app.extensions import db, login_manager
 
 load_dotenv()
@@ -38,5 +39,11 @@ def create_app():
     # Ensure tables are created inside application context
     with app.app_context():
         db.create_all()
+        # SQLite migration to add started_tests column if not exists
+        try:
+            db.session.execute(text('ALTER TABLE users ADD COLUMN started_tests INTEGER DEFAULT 0'))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
         
     return app

@@ -1,8 +1,11 @@
 // TypoPulse Typing Speed Test Engine
 
 let words = [];
+let typedWords = [];
 let selectedTime = 30; // Default test duration in seconds
 let timeRemaining = 30;
+let activeMode = 'time'; // 'time' or 'words'
+let selectedWordsLimit = 25; // Default words limit
 let timerInterval = null;
 let currentWordIndex = 0;
 let currentLetterIndex = 0;
@@ -28,6 +31,7 @@ const wordsContainer = document.getElementById('words-container');
 const wordsList = document.getElementById('words-list');
 const caret = document.getElementById('caret');
 const countdownDisp = document.getElementById('countdown');
+const timerIconEl = countdownDisp ? countdownDisp.previousElementSibling : null;
 const liveWpmDisp = document.getElementById('live-wpm');
 const liveAccuracyDisp = document.getElementById('live-accuracy');
 const testCard = document.getElementById('test-card');
@@ -35,6 +39,11 @@ const resultsCard = document.getElementById('results-card');
 const restartBtn = document.getElementById('restart-btn');
 const resultRetryBtn = document.getElementById('result-retry-btn');
 const timeBtns = document.querySelectorAll('.time-btn');
+const modeTimeBtn = document.getElementById('mode-time-btn');
+const modeWordsBtn = document.getElementById('mode-words-btn');
+const timeConfig = document.getElementById('time-config');
+const wordsConfig = document.getElementById('words-config');
+const wordLimitBtns = document.querySelectorAll('.word-limit-btn');
 const instructionText = document.getElementById('instruction-text');
 
 // Bounding box container for scrolling
@@ -78,6 +87,45 @@ function setupEventListeners() {
         settings.sound = e.detail;
     });
 
+    // Mode button switches
+    if (modeTimeBtn && modeWordsBtn) {
+        modeTimeBtn.addEventListener('click', () => {
+            if (isTestActive) return; // Prevent switching mid-test
+            
+            // Toggle highlights
+            modeTimeBtn.className = "mode-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent bg-brand-accent/10";
+            modeWordsBtn.className = "mode-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white";
+            
+            timeConfig.classList.remove('hidden');
+            wordsConfig.classList.add('hidden');
+            
+            if (timerIconEl) {
+                timerIconEl.className = "fa-regular fa-clock text-lg";
+            }
+            
+            activeMode = 'time';
+            resetTest();
+        });
+        
+        modeWordsBtn.addEventListener('click', () => {
+            if (isTestActive) return; // Prevent switching mid-test
+            
+            // Toggle highlights
+            modeWordsBtn.className = "mode-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent bg-brand-accent/10";
+            modeTimeBtn.className = "mode-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white";
+            
+            timeConfig.classList.add('hidden');
+            wordsConfig.classList.remove('hidden');
+            
+            if (timerIconEl) {
+                timerIconEl.className = "fa-solid fa-keyboard text-lg";
+            }
+            
+            activeMode = 'words';
+            resetTest();
+        });
+    }
+
     // Time button switches
     timeBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -92,6 +140,24 @@ function setupEventListeners() {
             btn.classList.add('text-brand-accent', 'bg-brand-accent/10');
             
             selectedTime = parseInt(btn.dataset.time);
+            resetTest();
+        });
+    });
+
+    // Word Limit button switches
+    wordLimitBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (isTestActive) return; // Prevent switching mid-test
+            
+            // UI state active styling
+            wordLimitBtns.forEach(b => {
+                b.classList.remove('text-brand-accent', 'bg-brand-accent/10');
+                b.classList.add('text-brand-textMuted', 'hover:text-white');
+            });
+            btn.classList.remove('text-brand-textMuted', 'hover:text-white');
+            btn.classList.add('text-brand-accent', 'bg-brand-accent/10');
+            
+            selectedWordsLimit = parseInt(btn.dataset.words);
             resetTest();
         });
     });
@@ -207,7 +273,8 @@ async function initTest() {
     wordsList.innerHTML = '<span class="text-brand-textMuted py-4 font-sans text-sm"><i class="fa-solid fa-spinner animate-spin mr-2"></i>Generating word list...</span>';
     
     try {
-        const response = await fetch(`/api/words?count=150`);
+        const count = activeMode === 'time' ? 150 : selectedWordsLimit;
+        const response = await fetch(`/api/words?count=${count}`);
         words = await response.json();
         renderWords();
         
@@ -231,7 +298,7 @@ function resetTest() {
 }
 
 function resetStateVariables() {
-    timeRemaining = selectedTime;
+    timeRemaining = activeMode === 'time' ? selectedTime : 0;
     currentWordIndex = 0;
     currentLetterIndex = 0;
     correctCharsCount = 0;
@@ -241,11 +308,12 @@ function resetStateVariables() {
     isTestActive = false;
     isTestFinished = false;
     secondStats = [];
+    typedWords = [];
     secondsElapsed = 0;
     lastTypedValLength = 0;
     
     typingInput.value = "";
-    countdownDisp.textContent = timeRemaining;
+    countdownDisp.textContent = activeMode === 'time' ? selectedTime : selectedWordsLimit;
     liveWpmDisp.textContent = "0";
     liveAccuracyDisp.textContent = "100%";
     instructionText.textContent = "Click below and start typing to begin the speed test";
@@ -260,6 +328,7 @@ function resetStateVariables() {
 // Render word blocks to DOM
 function renderWords() {
     wordsList.innerHTML = "";
+    wordsList.appendChild(caret); // Re-insert globally referenced caret
     words.forEach((wordText, wordIdx) => {
         const wordSpan = document.createElement('span');
         wordSpan.className = 'word';
@@ -369,9 +438,13 @@ function handleTyping(e, isSilent = false) {
                 playKeySound(false, true);
             } else if (lastCharIdx >= targetWord.length) {
                 playKeySound(true); // Error: typing beyond word boundary
+                totalErrors++;      // Track extra letters boundary overflow
             } else {
                 const isCorrect = (typedVal[lastCharIdx] === targetWord[lastCharIdx]);
                 playKeySound(!isCorrect);
+                if (!isCorrect) {
+                    totalErrors++;  // Track character typo
+                }
             }
         } else if (typedVal.length < lastTypedValLength) {
             // Backspacing from the first letter of a word back to empty
@@ -424,6 +497,14 @@ function handleTyping(e, isSilent = false) {
     totalKeysTyped++;
     calculateLiveMetrics();
     updateCaret();
+    
+    // Auto-end in Words Mode if we just completed the last character of the last word
+    if (activeMode === 'words' && currentWordIndex === selectedWordsLimit - 1) {
+        if (typedVal.length >= targetWord.length) {
+            typedWords[currentWordIndex] = typedVal;
+            endTest();
+        }
+    }
 }
 
 function handleSpecialKeys(e) {
@@ -452,6 +533,9 @@ function submitWord() {
     
     const targetWord = words[currentWordIndex];
     const typedVal = typingInput.value;
+    
+    // Store exact typed string for freedom mode backspacing
+    typedWords[currentWordIndex] = typedVal;
     
     // Verify word accuracy
     let isWordCorrect = (typedVal === targetWord);
@@ -489,6 +573,14 @@ function submitWord() {
     // Shift to next word
     currentWordIndex++;
     
+    if (activeMode === 'words') {
+        countdownDisp.textContent = Math.max(0, selectedWordsLimit - currentWordIndex);
+        if (currentWordIndex === selectedWordsLimit) {
+            endTest();
+            return;
+        }
+    }
+    
     const nextWordSpan = document.getElementById(`word-${currentWordIndex}`);
     if (nextWordSpan) {
         nextWordSpan.classList.add('active');
@@ -514,35 +606,32 @@ function submitWord() {
 function recalculateTallies() {
     correctCharsCount = 0;
     incorrectCharsCount = 0;
-    totalErrors = 0;
     
     for (let i = 0; i < currentWordIndex; i++) {
-        const wordSpan = document.getElementById(`word-${i}`);
-        if (!wordSpan) continue;
-        
         const targetWord = words[i];
-        let typedWordVal = "";
+        const typedWordVal = typedWords[i] || "";
         let wordCorrect = true;
         
-        const letters = wordSpan.querySelectorAll('.letter');
-        letters.forEach(letter => {
-            if (letter.classList.contains('correct')) {
-                correctCharsCount++;
-                typedWordVal += letter.textContent;
-            } else if (letter.classList.contains('incorrect')) {
+        const maxLen = Math.max(targetWord.length, typedWordVal.length);
+        for (let j = 0; j < maxLen; j++) {
+            if (j < targetWord.length) {
+                if (j < typedWordVal.length) {
+                    if (typedWordVal[j] === targetWord[j]) {
+                        correctCharsCount++;
+                    } else {
+                        incorrectCharsCount++;
+                        wordCorrect = false;
+                    }
+                } else {
+                    // Missed character
+                    incorrectCharsCount++;
+                    wordCorrect = false;
+                }
+            } else {
+                // Extra character
                 incorrectCharsCount++;
-                totalErrors++;
-                typedWordVal += letter.textContent;
                 wordCorrect = false;
             }
-        });
-        
-        // Account for missed/incomplete characters in that word
-        if (typedWordVal.length < targetWord.length) {
-            const diff = targetWord.length - typedWordVal.length;
-            incorrectCharsCount += diff;
-            totalErrors += diff;
-            wordCorrect = false;
         }
         
         // Space bar tally
@@ -569,17 +658,15 @@ function goBackToPreviousWord() {
         activeLetters.forEach(l => l.classList.remove('active'));
     }
     
-    // Reconstruct exact typed buffer from previous word spans
-    let reconstructedVal = "";
-    const letters = prevWordSpan.querySelectorAll('.letter');
-    letters.forEach(letter => {
-        if (letter.classList.contains('correct') || letter.classList.contains('incorrect')) {
-            reconstructedVal += letter.textContent;
-        }
-    });
-    
     // Decrement active index
     currentWordIndex--;
+    
+    if (activeMode === 'words') {
+        countdownDisp.textContent = selectedWordsLimit - currentWordIndex;
+    }
+    
+    // Retrieve exact typed buffer from typedWords log
+    const reconstructedVal = typedWords[currentWordIndex] || "";
     
     // Restore text into keyboard input
     typingInput.value = reconstructedVal;
@@ -617,10 +704,16 @@ function startTimer() {
     isTestActive = true;
     instructionText.innerHTML = '<span class="text-brand-accent animate-pulse">Test running... Focus!</span>';
     
+    // Increment started tests count on first keystroke
+    fetch('/api/test/start', { method: 'POST' }).catch(err => console.error("Failed to log test start:", err));
+    
     timerInterval = setInterval(() => {
-        timeRemaining--;
         secondsElapsed++;
-        countdownDisp.textContent = timeRemaining;
+        
+        if (activeMode === 'time') {
+            timeRemaining--;
+            countdownDisp.textContent = timeRemaining;
+        }
         
         // Calculate and log stats for graphs
         const stats = calculateLiveMetrics();
@@ -638,7 +731,7 @@ function startTimer() {
             totalIncorrect: currentIncorrect
         });
         
-        if (timeRemaining <= 0) {
+        if (activeMode === 'time' && timeRemaining <= 0) {
             endTest();
         }
     }, 1000);
@@ -689,12 +782,12 @@ function endTest() {
         incorrectCharsCount += incorrectLetters.length;
     }
     
-    const testDuration = selectedTime;
-    const elapsedMinutes = testDuration / 60;
+    const testDuration = activeMode === 'time' ? selectedTime : secondsElapsed;
+    const elapsedMinutes = (testDuration || 1) / 60;
     const finalWpm = Math.round((correctCharsCount / 5) / elapsedMinutes);
-    const totalTyped = correctCharsCount + incorrectCharsCount;
-    const finalAccuracy = totalTyped > 0 ? Math.round((correctCharsCount / totalTyped) * 100) : 100;
-    const finalRawWpm = Math.round((totalTyped / 5) / elapsedMinutes);
+    const totalKeystrokesCount = correctCharsCount + totalErrors;
+    const finalAccuracy = totalKeystrokesCount > 0 ? Math.round((correctCharsCount / totalKeystrokesCount) * 100) : 100;
+    const finalRawWpm = Math.round(((correctCharsCount + incorrectCharsCount) / 5) / elapsedMinutes);
     
     // Calculate character details: correct / incorrect / extra / missed
     let correctCount = 0;
@@ -739,7 +832,7 @@ function endTest() {
     // Bind stats to dashboard display elements
     document.getElementById('result-wpm').textContent = finalWpm;
     document.getElementById('result-accuracy').textContent = `${finalAccuracy}%`;
-    document.getElementById('result-type').textContent = `time ${testDuration}`;
+    document.getElementById('result-type').textContent = activeMode === 'time' ? `time ${selectedTime}` : `words ${selectedWordsLimit}`;
     document.getElementById('result-raw-wpm').textContent = finalRawWpm;
     document.getElementById('result-chars-ratio').textContent = `${correctCount}/${incorrectCount}/${extraCount}/${missedCount}`;
     document.getElementById('result-consistency').textContent = `${consistency}%`;
@@ -753,11 +846,11 @@ function endTest() {
     renderLiveChart();
     
     // Post to database
-    saveResultToDB(finalWpm, finalAccuracy, testDuration);
+    saveResultToDB(finalWpm, finalAccuracy, testDuration, activeMode);
 }
 
 // AJAX post results
-function saveResultToDB(wpm, accuracy, duration) {
+function saveResultToDB(wpm, accuracy, duration, mode) {
     fetch('/api/test/save', {
         method: 'POST',
         headers: {
@@ -767,7 +860,7 @@ function saveResultToDB(wpm, accuracy, duration) {
             wpm: wpm,
             accuracy: accuracy,
             duration: duration,
-            mode: 'time'
+            mode: mode
         })
     })
     .then(res => res.json())
