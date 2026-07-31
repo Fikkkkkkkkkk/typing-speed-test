@@ -15,7 +15,7 @@
         </div>
 
         <!-- Form -->
-        <form method="POST" action="{{ url_for('register') }}" class="space-y-5 relative z-10">
+        <form method="POST" action="{{ url_for('auth.register') }}" class="space-y-5 relative z-10">
             <!-- Username -->
             <div>
                 <label for="username" class="block text-xs font-semibold uppercase tracking-wider text-brand-textMuted mb-2">Username</label>
@@ -64,7 +64,7 @@
         <div class="mt-8 text-center border-t border-white/5 pt-6 relative z-10">
             <p class="text-sm text-brand-textMuted">
                 Already have an account? 
-                <a href="{{ url_for('login') }}" class="font-semibold text-brand-accentLight hover:text-brand-accent hover:underline transition-colors ml-1">Log in</a>
+                <a href="{{ url_for('auth.login') }}" class="font-semibold text-brand-accentLight hover:text-brand-accent hover:underline transition-colors ml-1">Log in</a>
             </p>
         </div>
     </div>

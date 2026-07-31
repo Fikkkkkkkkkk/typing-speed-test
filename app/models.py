@@ -1,9 +1,7 @@
-from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
-
-db = SQLAlchemy()
+from app.extensions import db
 
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
@@ -30,8 +28,8 @@ class TestResult(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     wpm = db.Column(db.Float, nullable=False)
     accuracy = db.Column(db.Float, nullable=False)
-    duration = db.Column(db.Integer, nullable=False)  # in seconds (e.g. 15, 30, 60)
-    mode = db.Column(db.String(20), nullable=False, default='time')  # 'time' or 'words'
+    duration = db.Column(db.Integer, nullable=False)  # in seconds
+    mode = db.Column(db.String(20), nullable=False, default='time')
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
