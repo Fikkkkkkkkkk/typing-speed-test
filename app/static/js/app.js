@@ -4,7 +4,7 @@ let words = [];
 let typedWords = [];
 let selectedTime = 30; // Default test duration in seconds
 let timeRemaining = 30;
-let activeMode = 'time'; // 'time' or 'words'
+let activeMode = 'words'; // 'time' or 'words'
 let selectedWordsLimit = 25; // Default words limit
 let timerInterval = null;
 let currentWordIndex = 0;
@@ -211,9 +211,19 @@ function setupEventListeners() {
         // Tab key focuses the restart button to prepare for restart via Enter
         if (e.key === 'Tab') {
             e.preventDefault();
-            const restartBtn = document.getElementById('restart-btn');
-            if (restartBtn) {
-                restartBtn.focus();
+            const resultsCard = document.getElementById('results-card');
+            const isResultsActive = resultsCard && !resultsCard.classList.contains('hidden');
+            
+            if (isResultsActive) {
+                const resultRetryBtn = document.getElementById('result-retry-btn');
+                if (resultRetryBtn) {
+                    resultRetryBtn.focus();
+                }
+            } else {
+                const restartBtn = document.getElementById('restart-btn');
+                if (restartBtn) {
+                    restartBtn.focus();
+                }
             }
         }
     });
@@ -369,7 +379,11 @@ function resetStateVariables() {
     }
     
     typingInput.value = "";
-    countdownDisp.textContent = activeMode === 'time' ? selectedTime : selectedWordsLimit;
+    if (activeMode === 'time') {
+        countdownDisp.textContent = selectedTime;
+    } else {
+        countdownDisp.innerHTML = `${selectedWordsLimit}<span class="opacity-40 ml-2.5" style="font-size: 50%; font-weight: 300;">0s</span>`;
+    }
     liveWpmDisp.textContent = "0";
     liveAccuracyDisp.textContent = "100%";
     instructionText.textContent = "Click below and start typing to begin the speed test";
@@ -630,7 +644,8 @@ function submitWord() {
     currentWordIndex++;
     
     if (activeMode === 'words') {
-        countdownDisp.textContent = Math.max(0, selectedWordsLimit - currentWordIndex);
+        const wordsRemaining = Math.max(0, selectedWordsLimit - currentWordIndex);
+        countdownDisp.innerHTML = `${wordsRemaining}<span class="opacity-40 ml-2.5" style="font-size: 50%; font-weight: 300;">${secondsElapsed}s</span>`;
         if (currentWordIndex === selectedWordsLimit) {
             endTest();
             return;
@@ -718,7 +733,7 @@ function goBackToPreviousWord() {
     currentWordIndex--;
     
     if (activeMode === 'words') {
-        countdownDisp.textContent = selectedWordsLimit - currentWordIndex;
+        countdownDisp.innerHTML = `${selectedWordsLimit - currentWordIndex}<span class="opacity-40 ml-2.5" style="font-size: 50%; font-weight: 300;">${secondsElapsed}s</span>`;
     }
     
     // Retrieve exact typed buffer from typedWords log
@@ -778,6 +793,9 @@ function startTimer() {
         if (activeMode === 'time') {
             timeRemaining--;
             countdownDisp.textContent = timeRemaining;
+        } else {
+            const wordsRemaining = Math.max(0, selectedWordsLimit - currentWordIndex);
+            countdownDisp.innerHTML = `${wordsRemaining}<span class="opacity-40 ml-2.5" style="font-size: 50%; font-weight: 300;">${secondsElapsed}s</span>`;
         }
         
         // Calculate and log stats for graphs

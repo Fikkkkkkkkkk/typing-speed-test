@@ -326,6 +326,12 @@
         outline: none !important;
     }
     
+    #result-retry-btn:focus {
+        outline: none !important;
+        box-shadow: 0 0 15px var(--color-accent) !important;
+        transform: scale(1.03) !important;
+    }
+    
     #restart-btn span {
         display: none !important;
     }
@@ -354,10 +360,10 @@
                 <!-- Mode Toggle (Time vs Words) -->
                 <div id="mode-capsule" class="relative">
                     <div id="mode-slider" class="absolute top-0.5 bottom-0.5 rounded-full bg-brand-accent/10 transition-all duration-300 pointer-events-none"></div>
-                    <button id="mode-time-btn" class="mode-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent" data-mode="time">
+                    <button id="mode-time-btn" class="mode-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-mode="time">
                         time
                     </button>
-                    <button id="mode-words-btn" class="mode-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-mode="words">
+                    <button id="mode-words-btn" class="mode-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent" data-mode="words">
                         words
                     </button>
                 </div>
@@ -366,7 +372,7 @@
                 <div class="hidden sm:block h-4 w-[1px] bg-white/5"></div>
 
                 <!-- Duration settings -->
-                <div id="time-config" class="flex items-center">
+                <div id="time-config" class="flex items-center hidden">
                     <div id="time-capsule" class="relative">
                         <div id="time-slider" class="absolute top-0.5 bottom-0.5 rounded-full bg-brand-accent/10 transition-all duration-300 pointer-events-none"></div>
                         <button class="time-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-time="15">15s</button>
@@ -377,7 +383,7 @@
                 </div>
 
                 <!-- Words settings (initially hidden) -->
-                <div id="words-config" class="flex items-center hidden">
+                <div id="words-config" class="flex items-center">
                     <div id="words-capsule" class="relative">
                         <div id="words-slider" class="absolute top-0.5 bottom-0.5 rounded-full bg-brand-accent/10 transition-all duration-300 pointer-events-none"></div>
                         <button class="word-limit-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-words="10">10</button>
