@@ -24,6 +24,7 @@ let isTestFinished = false;
 let secondStats = [];
 let secondsElapsed = 0;
 let resultChartInstance = null;
+let visualizerOn = false;
 
 // HTML Elements
 const typingInput = document.getElementById('typing-input');
@@ -66,6 +67,24 @@ document.addEventListener("DOMContentLoaded", () => {
     
     initTest();
     setupEventListeners();
+
+    // Load visualizer preference
+    visualizerOn = localStorage.getItem('typopulse-key-visualizer') === 'true';
+    const visualizerEl = document.getElementById('keyboard-visualizer');
+    if (visualizerEl) {
+        if (visualizerOn) {
+            visualizerEl.classList.remove('hidden');
+        } else {
+            visualizerEl.classList.add('hidden');
+        }
+    }
+
+    // Initialize active sliders after browser layout resolves
+    setTimeout(() => {
+        updateModeSlider();
+        updateTimeSlider();
+        updateWordsSlider();
+    }, 50);
 });
 
 // Setup input listeners & controls
@@ -93,36 +112,32 @@ function setupEventListeners() {
             if (isTestActive) return; // Prevent switching mid-test
             
             // Toggle highlights
-            modeTimeBtn.className = "mode-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent bg-brand-accent/10";
-            modeWordsBtn.className = "mode-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white";
+            modeTimeBtn.className = "mode-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent";
+            modeWordsBtn.className = "mode-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white";
             
             timeConfig.classList.remove('hidden');
             wordsConfig.classList.add('hidden');
             
-            if (timerIconEl) {
-                timerIconEl.className = "fa-regular fa-clock text-lg";
-            }
-            
             activeMode = 'time';
             resetTest();
+            setTimeout(updateModeSlider, 10);
+            setTimeout(updateTimeSlider, 10);
         });
         
         modeWordsBtn.addEventListener('click', () => {
             if (isTestActive) return; // Prevent switching mid-test
             
             // Toggle highlights
-            modeWordsBtn.className = "mode-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent bg-brand-accent/10";
-            modeTimeBtn.className = "mode-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white";
+            modeWordsBtn.className = "mode-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent";
+            modeTimeBtn.className = "mode-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white";
             
             timeConfig.classList.add('hidden');
             wordsConfig.classList.remove('hidden');
             
-            if (timerIconEl) {
-                timerIconEl.className = "fa-solid fa-keyboard text-lg";
-            }
-            
             activeMode = 'words';
             resetTest();
+            setTimeout(updateModeSlider, 10);
+            setTimeout(updateWordsSlider, 10);
         });
     }
 
@@ -133,14 +148,15 @@ function setupEventListeners() {
             
             // UI state active styling
             timeBtns.forEach(b => {
-                b.classList.remove('text-brand-accent', 'bg-brand-accent/10');
+                b.classList.remove('text-brand-accent');
                 b.classList.add('text-brand-textMuted', 'hover:text-white');
             });
             btn.classList.remove('text-brand-textMuted', 'hover:text-white');
-            btn.classList.add('text-brand-accent', 'bg-brand-accent/10');
+            btn.classList.add('text-brand-accent');
             
             selectedTime = parseInt(btn.dataset.time);
             resetTest();
+            setTimeout(updateTimeSlider, 10);
         });
     });
 
@@ -151,14 +167,15 @@ function setupEventListeners() {
             
             // UI state active styling
             wordLimitBtns.forEach(b => {
-                b.classList.remove('text-brand-accent', 'bg-brand-accent/10');
+                b.classList.remove('text-brand-accent');
                 b.classList.add('text-brand-textMuted', 'hover:text-white');
             });
             btn.classList.remove('text-brand-textMuted', 'hover:text-white');
-            btn.classList.add('text-brand-accent', 'bg-brand-accent/10');
+            btn.classList.add('text-brand-accent');
             
             selectedWordsLimit = parseInt(btn.dataset.words);
             resetTest();
+            setTimeout(updateWordsSlider, 10);
         });
     });
 
@@ -168,26 +185,55 @@ function setupEventListeners() {
         resultsCard.classList.add('hidden');
         testCard.classList.remove('hidden');
         resetTest();
+        setTimeout(() => {
+            updateModeSlider();
+            updateTimeSlider();
+            updateWordsSlider();
+        }, 50);
     });
 
-    // Window resize - recalculate caret placement
-    window.addEventListener('resize', updateCaret);
+    // Window resize - recalculate caret placement and slider positions
+    window.addEventListener('resize', () => {
+        updateCaret();
+        updateModeSlider();
+        updateTimeSlider();
+        updateWordsSlider();
+    });
 
     // Focus input on initial click anywhere
     document.addEventListener('keydown', (e) => {
-        // ESC key restarts test
+        // ESC key restarts test instantly
         if (e.key === 'Escape') {
             e.preventDefault();
             resetTest();
         }
         
-        // Tab + Enter restarts test
+        // Tab key focuses the restart button to prepare for restart via Enter
         if (e.key === 'Tab') {
-            // Keep Tab from focusing nav elements if we are on the test
-            if (document.activeElement !== typingInput) {
-                e.preventDefault();
-                focusInput();
+            e.preventDefault();
+            const restartBtn = document.getElementById('restart-btn');
+            if (restartBtn) {
+                restartBtn.focus();
             }
+        }
+    });
+
+    // Keystroke Visualizer Press Effects
+    window.addEventListener('keydown', (e) => {
+        if (!visualizerOn) return;
+        const key = e.key.toLowerCase();
+        const keyCap = document.querySelector(`.key-cap[data-key="${key === 'spacebar' || key === ' ' ? ' ' : key}"]`);
+        if (keyCap) {
+            keyCap.classList.add('key-pressed');
+        }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (!visualizerOn) return;
+        const key = e.key.toLowerCase();
+        const keyCap = document.querySelector(`.key-cap[data-key="${key === 'spacebar' || key === ' ' ? ' ' : key}"]`);
+        if (keyCap) {
+            keyCap.classList.remove('key-pressed');
         }
     });
 }
@@ -298,6 +344,7 @@ function resetTest() {
 }
 
 function resetStateVariables() {
+    document.body.classList.remove('typing-active');
     timeRemaining = activeMode === 'time' ? selectedTime : 0;
     currentWordIndex = 0;
     currentLetterIndex = 0;
@@ -311,6 +358,15 @@ function resetStateVariables() {
     typedWords = [];
     secondsElapsed = 0;
     lastTypedValLength = 0;
+
+    const visualizerEl = document.getElementById('keyboard-visualizer');
+    if (visualizerEl) {
+        if (visualizerOn) {
+            visualizerEl.classList.remove('hidden');
+        } else {
+            visualizerEl.classList.add('hidden');
+        }
+    }
     
     typingInput.value = "";
     countdownDisp.textContent = activeMode === 'time' ? selectedTime : selectedWordsLimit;
@@ -702,7 +758,16 @@ function handleLineScrolling(nextWordEl) {
 // Start test timer
 function startTimer() {
     isTestActive = true;
+    document.body.classList.add('typing-active');
     instructionText.innerHTML = '<span class="text-brand-accent animate-pulse">Test running... Focus!</span>';
+    
+    // Smoothly scroll the typing arena to vertical center of screen after layout fades out
+    setTimeout(() => {
+        const arenaBox = document.getElementById('words-container-box');
+        if (arenaBox) {
+            arenaBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, 50);
     
     // Increment started tests count on first keystroke
     fetch('/api/test/start', { method: 'POST' }).catch(err => console.error("Failed to log test start:", err));
@@ -771,6 +836,7 @@ function calculateLiveMetrics() {
 function endTest() {
     clearInterval(timerInterval);
     isTestFinished = true;
+    document.body.classList.remove('typing-active');
     
     // Final tally (evaluate current active word before stopping)
     const activeWordSpan = document.getElementById(`word-${currentWordIndex}`);
@@ -841,6 +907,11 @@ function endTest() {
     // Swap panels
     testCard.classList.add('hidden');
     resultsCard.classList.remove('hidden');
+
+    const visualizerEl = document.getElementById('keyboard-visualizer');
+    if (visualizerEl) {
+        visualizerEl.classList.add('hidden');
+    }
     
     // Render chart
     renderLiveChart();
@@ -997,4 +1068,32 @@ function renderLiveChart() {
             }
         }
     });
+}
+
+// Capsule Switch Slider Positioning Helpers
+function updateModeSlider() {
+    const activeBtn = document.querySelector('.mode-btn.text-brand-accent');
+    const slider = document.getElementById('mode-slider');
+    if (activeBtn && slider) {
+        slider.style.left = `${activeBtn.offsetLeft}px`;
+        slider.style.width = `${activeBtn.offsetWidth}px`;
+    }
+}
+
+function updateTimeSlider() {
+    const activeBtn = document.querySelector('.time-btn.text-brand-accent');
+    const slider = document.getElementById('time-slider');
+    if (activeBtn && slider) {
+        slider.style.left = `${activeBtn.offsetLeft}px`;
+        slider.style.width = `${activeBtn.offsetWidth}px`;
+    }
+}
+
+function updateWordsSlider() {
+    const activeBtn = document.querySelector('.word-limit-btn.text-brand-accent');
+    const slider = document.getElementById('words-slider');
+    if (activeBtn && slider) {
+        slider.style.left = `${activeBtn.offsetLeft}px`;
+        slider.style.width = `${activeBtn.offsetWidth}px`;
+    }
 }

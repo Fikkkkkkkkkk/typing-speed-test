@@ -9,8 +9,8 @@
     /* Typing test custom styling */
     .words-wrapper {
         position: relative;
-        line-height: 2.75rem;
-        height: 140px;
+        line-height: 2.2rem;
+        height: 110px;
         overflow: hidden;
     }
     
@@ -80,6 +80,262 @@
     .word.error-underline {
         border-bottom: 2px dotted var(--color-error);
     }
+
+    /* ========================================================
+       PREMIUM MINIMALIST STYLE REDESIGN OVERRIDES
+       ======================================================== */
+
+    /* Constrain body to full viewport height and hide scrollbars */
+    body {
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+    }
+
+    /* Capsule slider wrappers */
+    #mode-capsule, #time-capsule, #words-capsule {
+        position: relative;
+        display: flex;
+        align-items: center;
+        background-color: rgba(255, 255, 255, 0.02) !important;
+        border: 1px solid rgba(255, 255, 255, 0.04) !important;
+        border-radius: 9999px !important;
+        padding: 3px !important;
+        overflow: hidden;
+    }
+
+    /* Sliding background pill */
+    #mode-slider, #time-slider, #words-slider {
+        position: absolute;
+        top: 3px;
+        bottom: 3px;
+        background-color: var(--color-accent) !important;
+        opacity: 0.12;
+        border-radius: 9999px !important;
+        z-index: 1;
+        pointer-events: none;
+    }
+    
+    /* Vertically center the main layout content */
+    main {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+    
+    /* Stick the footer to the bottom with compact padding */
+    footer {
+        margin-top: auto !important;
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+    }
+
+    /* Focus Mode Auto-Fading Transitions */
+    header, footer, #toolbar, #restart-btn {
+        transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1), transform 0.45s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    
+    body.typing-active header {
+        opacity: 0 !important;
+        transform: translateY(-15px) !important;
+        pointer-events: none !important;
+    }
+    
+    body.typing-active footer {
+        opacity: 0 !important;
+        transform: translateY(15px) !important;
+        pointer-events: none !important;
+    }
+    
+    body.typing-active #toolbar {
+        opacity: 0 !important;
+        transform: translateY(-20px) !important;
+        pointer-events: none !important;
+    }
+    
+    body.typing-active #restart-btn {
+        opacity: 0.15 !important;
+        transform: scale(0.95) !important;
+    }
+
+    /* Flat borderless panel wrappers */
+    #test-card {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 1.25rem 0 !important;
+    }
+
+    /* Clean center aligned toolbar */
+    #toolbar {
+        border-bottom: none !important;
+        justify-content: center !important;
+        margin-bottom: 1.5rem !important;
+    }
+    
+    #toolbar > div:first-child {
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 1.5rem !important;
+        width: 100%;
+    }
+    
+    #time-config, #words-config {
+        background-color: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+    }
+
+    /* Hide section title tags like "Duration" or "Word Limit" */
+    #time-config > span, #words-config > span {
+        display: none !important;
+    }
+
+    /* Flat text buttons */
+    .mode-btn, .time-btn, .word-limit-btn {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        font-family: var(--font-typing, 'JetBrains Mono', monospace) !important;
+        font-size: 0.75rem !important;
+        color: var(--color-muted) !important;
+        opacity: 0.55;
+        transition: all 0.2s ease !important;
+        padding: 0.25rem 0 !important;
+        letter-spacing: 0.05em;
+    }
+    
+    .mode-btn {
+        width: 4.5rem !important;
+        display: inline-flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+    
+    .time-btn, .word-limit-btn {
+        width: 3.5rem !important;
+        display: inline-flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+    
+    .mode-btn:hover, .time-btn:hover, .word-limit-btn:hover {
+        color: var(--color-text) !important;
+        opacity: 1 !important;
+    }
+    
+    .mode-btn.text-brand-accent, 
+    .time-btn.text-brand-accent, 
+    .word-limit-btn.text-brand-accent {
+        color: var(--color-accent) !important;
+        background-color: transparent !important;
+        opacity: 1 !important;
+        font-weight: 700 !important;
+    }
+
+    /* Typing Arena Layout */
+    #words-container-box {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin-bottom: 2rem !important;
+    }
+
+    /* Countdown Display */
+    #countdown {
+        font-size: 2.25rem !important;
+        font-weight: 300 !important;
+        color: var(--color-accent) !important;
+        line-height: 1 !important;
+        opacity: 0.45;
+        transition: opacity 0.3s ease;
+    }
+    
+    body.typing-active #countdown {
+        opacity: 0.8;
+    }
+    
+    /* Hide live stats during the test to preserve screen focus */
+    body.typing-active #live-stats-container {
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+
+    /* Keystroke Visualizer Keycap Styling */
+    .key-cap {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.85rem;
+        height: 1.85rem;
+        background-color: rgba(255, 255, 255, 0.02) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        border-radius: 5px !important;
+        font-family: var(--font-typing, 'JetBrains Mono', monospace) !important;
+        font-size: 0.75rem !important;
+        color: var(--color-muted) !important;
+        text-transform: lowercase;
+        transition: background-color 0.1s ease-out, border-color 0.1s ease-out, color 0.1s ease-out, box-shadow 0.1s ease-out, transform 0.1s ease-out !important;
+    }
+    
+    .key-cap.key-pressed {
+        background-color: var(--color-accent) !important;
+        border-color: var(--color-accent) !important;
+        color: var(--color-bg) !important;
+        box-shadow: 0 0 10px var(--color-accent) !important;
+        transform: scale(0.93) !important;
+        transition: none !important;
+    }
+
+    /* Hide icons in toolbar configuration toggles and countdown timer only, leaving header logo intact */
+    #toolbar .fa-clock, 
+    #toolbar .fa-keyboard, 
+    #toolbar .fa-font, 
+    #toolbar .fa-circle-info,
+    #words-container-box .fa-clock {
+        display: none !important;
+    }
+
+    /* Hide status instruction text container to match minimalist style */
+    #toolbar > .flex.items-center.text-xs.text-brand-textMuted {
+        display: none !important;
+    }
+
+    /* Icon-only minimal restart button */
+    #restart-btn {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: var(--color-muted) !important;
+        font-size: 1.25rem !important;
+        opacity: 0.5;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        padding: 0.75rem !important;
+        margin-top: 1rem;
+    }
+    
+    #restart-btn:hover, #restart-btn:focus {
+        color: var(--color-accent) !important;
+        opacity: 1 !important;
+        transform: rotate(-180deg) scale(1.15) !important;
+        outline: none !important;
+    }
+    
+    #restart-btn span {
+        display: none !important;
+    }
+
+    /* Results Screen */
+    #results-card {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
 </style>
 {% endblock %}
 
@@ -96,33 +352,39 @@
         <div id="toolbar" class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-white/5 pb-4">
             <div class="flex flex-wrap items-center gap-4">
                 <!-- Mode Toggle (Time vs Words) -->
-                <div class="flex items-center space-x-1 bg-white/5 p-1 rounded-xl border border-white/5">
-                    <button id="mode-time-btn" class="mode-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent bg-brand-accent/10" data-mode="time">
-                        <i class="fa-regular fa-clock mr-1.5"></i>time
+                <div id="mode-capsule" class="relative">
+                    <div id="mode-slider" class="absolute top-0.5 bottom-0.5 rounded-full bg-brand-accent/10 transition-all duration-300 pointer-events-none"></div>
+                    <button id="mode-time-btn" class="mode-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent" data-mode="time">
+                        time
                     </button>
-                    <button id="mode-words-btn" class="mode-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-mode="words">
-                        <i class="fa-solid fa-font mr-1.5"></i>words
+                    <button id="mode-words-btn" class="mode-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-mode="words">
+                        words
                     </button>
                 </div>
 
                 <!-- Spacer separator line -->
-                <div class="hidden sm:block h-6 w-[1px] bg-white/5"></div>
+                <div class="hidden sm:block h-4 w-[1px] bg-white/5"></div>
 
                 <!-- Duration settings -->
-                <div id="time-config" class="flex items-center space-x-1 bg-white/5 p-1 rounded-xl border border-white/5">
-                    <span class="text-xs text-brand-textMuted px-3 py-1.5 font-mono uppercase tracking-wider">Duration</span>
-                    <button class="time-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-time="15">15s</button>
-                    <button class="time-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent bg-brand-accent/10" data-time="30">30s</button>
-                    <button class="time-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-time="60">60s</button>
+                <div id="time-config" class="flex items-center">
+                    <div id="time-capsule" class="relative">
+                        <div id="time-slider" class="absolute top-0.5 bottom-0.5 rounded-full bg-brand-accent/10 transition-all duration-300 pointer-events-none"></div>
+                        <button class="time-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-time="15">15s</button>
+                        <button class="time-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent" data-time="30">30s</button>
+                        <button class="time-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-time="60">60s</button>
+                        <button class="time-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-time="120">120s</button>
+                    </div>
                 </div>
 
                 <!-- Words settings (initially hidden) -->
-                <div id="words-config" class="flex items-center space-x-1 bg-white/5 p-1 rounded-xl border border-white/5 hidden">
-                    <span class="text-xs text-brand-textMuted px-3 py-1.5 font-mono uppercase tracking-wider">Word Limit</span>
-                    <button class="word-limit-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-words="10">10</button>
-                    <button class="word-limit-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent bg-brand-accent/10" data-words="25">25</button>
-                    <button class="word-limit-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-words="50">50</button>
-                    <button class="word-limit-btn px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-words="100">100</button>
+                <div id="words-config" class="flex items-center hidden">
+                    <div id="words-capsule" class="relative">
+                        <div id="words-slider" class="absolute top-0.5 bottom-0.5 rounded-full bg-brand-accent/10 transition-all duration-300 pointer-events-none"></div>
+                        <button class="word-limit-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-words="10">10</button>
+                        <button class="word-limit-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-accent" data-words="25">25</button>
+                        <button class="word-limit-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-words="50">50</button>
+                        <button class="word-limit-btn relative z-10 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider font-mono transition-all text-brand-textMuted hover:text-white" data-words="100">100</button>
+                    </div>
                 </div>
             </div>
             
@@ -134,20 +396,19 @@
         </div>
 
         <!-- Main Display Interface -->
-        <div class="relative bg-[#0b0b11]/50 border border-white/5 rounded-2xl p-6 md:p-8 select-none cursor-text mb-6" id="words-container-box">
+        <div class="relative bg-[#0b0b11]/50 border border-white/5 rounded-2xl p-4 md:p-5 select-none cursor-text mb-4" id="words-container-box">
             
             <!-- Top stats (countdown / wpm) -->
-            <div class="flex justify-between items-center mb-6">
-                <!-- Large Timer Countdown -->
-                <div class="flex items-center space-x-2 text-brand-accent">
-                    <i class="fa-regular fa-clock text-lg"></i>
-                    <span id="countdown" class="text-2xl font-bold font-mono">30</span>
+            <div class="relative w-full mb-6 flex justify-center items-center">
+                <!-- Centered Large Timer Countdown -->
+                <div class="text-center">
+                    <span id="countdown" class="font-mono">30</span>
                 </div>
                 
-                <!-- Live Stats -->
-                <div class="flex items-center space-x-6 text-sm text-brand-textMuted font-mono">
-                    <div>WPM: <span id="live-wpm" class="text-white font-bold">0</span></div>
-                    <div>Accuracy: <span id="live-accuracy" class="text-white font-bold">100%</span></div>
+                <!-- Live Stats (Floating unobtrusively on the right) -->
+                <div id="live-stats-container" class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center space-x-4 text-[10px] text-brand-textMuted/40 font-mono tracking-wider transition-opacity duration-300">
+                    <div>wpm: <span id="live-wpm" class="text-brand-text/60 font-bold">0</span></div>
+                    <div>acc: <span id="live-accuracy" class="text-brand-text/60 font-bold">100%</span></div>
                 </div>
             </div>
 
@@ -168,6 +429,49 @@
                 <i class="fa-solid fa-rotate-left"></i>
                 <span>Restart Test</span>
             </button>
+        </div>
+    </div>
+
+    <!-- Keystroke Visualizer -->
+    <div id="keyboard-visualizer" class="w-full max-w-2xl mx-auto mt-4 hidden select-none transition-all duration-300 opacity-60">
+        <!-- Row 1: QWERTY... -->
+        <div class="flex justify-center gap-1.5 mb-1.5">
+            <kbd class="key-cap" data-key="q">q</kbd>
+            <kbd class="key-cap" data-key="w">w</kbd>
+            <kbd class="key-cap" data-key="e">e</kbd>
+            <kbd class="key-cap" data-key="r">r</kbd>
+            <kbd class="key-cap" data-key="t">t</kbd>
+            <kbd class="key-cap" data-key="y">y</kbd>
+            <kbd class="key-cap" data-key="u">u</kbd>
+            <kbd class="key-cap" data-key="i">i</kbd>
+            <kbd class="key-cap" data-key="o">o</kbd>
+            <kbd class="key-cap" data-key="p">p</kbd>
+        </div>
+        <!-- Row 2: ASDF... -->
+        <div class="flex justify-center gap-1.5 mb-1.5">
+            <kbd class="key-cap" data-key="a">a</kbd>
+            <kbd class="key-cap" data-key="s">s</kbd>
+            <kbd class="key-cap" data-key="d">d</kbd>
+            <kbd class="key-cap" data-key="f">f</kbd>
+            <kbd class="key-cap" data-key="g">g</kbd>
+            <kbd class="key-cap" data-key="h">h</kbd>
+            <kbd class="key-cap" data-key="j">j</kbd>
+            <kbd class="key-cap" data-key="k">k</kbd>
+            <kbd class="key-cap" data-key="l">l</kbd>
+        </div>
+        <!-- Row 3: ZXCV... -->
+        <div class="flex justify-center gap-1.5 mb-1.5">
+            <kbd class="key-cap" data-key="z">z</kbd>
+            <kbd class="key-cap" data-key="x">x</kbd>
+            <kbd class="key-cap" data-key="c">c</kbd>
+            <kbd class="key-cap" data-key="v">v</kbd>
+            <kbd class="key-cap" data-key="b">b</kbd>
+            <kbd class="key-cap" data-key="n">n</kbd>
+            <kbd class="key-cap" data-key="m">m</kbd>
+        </div>
+        <!-- Row 4: Space... -->
+        <div class="flex justify-center">
+            <kbd class="key-cap w-48" data-key=" ">space</kbd>
         </div>
     </div>
 

@@ -251,6 +251,19 @@
                 </div>
             </div>
 
+            <!-- Keystroke Visualizer Settings Section -->
+            <div id="visualizer-section" class="glass-panel p-6 rounded-2xl border border-white/5">
+                <h3 class="text-xs font-mono uppercase tracking-widest text-brand-accentLight mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-keyboard"></i>keystroke visualizer
+                </h3>
+                <p class="text-xs text-brand-textMuted mb-6">display a real-time responsive keyboard visualizer below the test screen showing which keys are pressed.</p>
+                
+                <div class="flex flex-wrap gap-2.5">
+                    <button class="visualizer-pill px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer" data-visualizer="false">Hidden (Off)</button>
+                    <button class="visualizer-pill px-4 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer" data-visualizer="true">Visible (On)</button>
+                </div>
+            </div>
+
             <!-- Word Spacing Settings Section -->
             <div id="spacing-section" class="glass-panel p-6 rounded-2xl border border-white/5">
                 <!-- Header with Title & Right-Aligned Live Preview -->
@@ -330,6 +343,7 @@
         const caretButtons = document.querySelectorAll('.caret-pill');
         const soundButtons = document.querySelectorAll('.sound-pill');
         const spacingButtons = document.querySelectorAll('.spacing-pill');
+        const visualizerButtons = document.querySelectorAll('.visualizer-pill');
         const caretPreviewCursor = document.getElementById('caret-preview-cursor');
         
         let audioCtx = null;
@@ -340,6 +354,7 @@
         const currentFont = localStorage.getItem('typopulse-font') || 'jetbrains-mono';
         let currentSpacing = localStorage.getItem('typopulse-spacing') || 'normal';
         const soundOn = localStorage.getItem('typopulse-sound') === 'true';
+        const visualizerOn = localStorage.getItem('typopulse-key-visualizer') === 'true';
 
         // Styling classes constants
         const inactiveClasses = "bg-white/5 border-white/5 text-brand-textMuted hover:bg-white/10 hover:text-white";
@@ -479,7 +494,17 @@
         setActivePill(caretButtons, currentCaret, 'caret');
         setActivePill(soundButtons, soundOn.toString(), 'sound');
         setActivePill(spacingButtons, currentSpacing, 'spacing');
+        setActivePill(visualizerButtons, visualizerOn.toString(), 'visualizer');
         updateSpacingPreview(currentSpacing);
+
+        // Keystroke visualizer toggle click listener
+        visualizerButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const visualizerVal = btn.dataset.visualizer === 'true';
+                localStorage.setItem('typopulse-key-visualizer', visualizerVal);
+                setActivePill(visualizerButtons, visualizerVal.toString(), 'visualizer');
+            });
+        });
 
         soundButtons.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -614,6 +639,7 @@
                     localStorage.removeItem('typopulse-font');
                     localStorage.removeItem('typopulse-sound');
                     localStorage.removeItem('typopulse-spacing');
+                    localStorage.removeItem('typopulse-key-visualizer');
                     
                     // Reload page after a brief delay
                     setTimeout(() => {
@@ -659,7 +685,7 @@
         // Set active/inactive Tailwind classes dynamically
         function setActivePill(buttonGroup, activeValue, type) {
             buttonGroup.forEach(btn => {
-                const dataVal = type === 'caret' ? btn.dataset.caret : (type === 'sound' ? btn.dataset.sound : (type === 'font' ? btn.dataset.font : btn.dataset.spacing));
+                const dataVal = type === 'caret' ? btn.dataset.caret : (type === 'sound' ? btn.dataset.sound : (type === 'font' ? btn.dataset.font : (type === 'visualizer' ? btn.dataset.visualizer : btn.dataset.spacing)));
                 
                 if (dataVal === activeValue) {
                     btn.className = btn.className.split(' ').filter(c => !inactiveClasses.split(' ').includes(c)).join(' ');
