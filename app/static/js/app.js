@@ -866,9 +866,25 @@ function saveResultToDB(wpm, accuracy, duration, mode) {
     .then(res => res.json())
     .then(data => {
         console.log("Save status:", data.message);
+        if (data.status === 'guest_mode') {
+            if (typeof window.showToast === 'function') {
+                window.showToast(data.message, 'info');
+            }
+        } else if (data.status === 'success') {
+            if (typeof window.showToast === 'function') {
+                window.showToast(data.message, 'success');
+            }
+        } else {
+            if (typeof window.showToast === 'function') {
+                window.showToast(data.message || 'An error occurred.', 'error');
+            }
+        }
     })
     .catch(err => {
         console.error("Save error:", err);
+        if (typeof window.showToast === 'function') {
+            window.showToast('Network error. Unable to connect to server.', 'error');
+        }
     });
 }
 

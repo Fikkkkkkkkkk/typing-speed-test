@@ -165,22 +165,30 @@
         </div>
     </header>
 
-    <!-- Flash Messages Container -->
-    <div class="max-w-screen-xl mx-auto w-full px-[1vw] mt-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flex items-center p-4 mb-4 rounded-xl border border-white/5 {% if category == 'error' %}bg-brand-error/15 text-brand-error border-brand-error/20{% elif category == 'success' %}bg-brand-success/15 text-brand-success border-brand-success/20{% else %}bg-brand-accent/15 text-brand-accentLight border-brand-accent/20{% endif %} shadow-lg animate-fade-in" id="flash-{{ loop.index }}">
-                        <i class="{% if category == 'error' %}fa-solid fa-circle-exclamation{% elif category == 'success' %}fa-solid fa-circle-check{% else %}fa-solid fa-circle-info{% endif %} text-lg mr-3"></i>
-                        <div class="text-sm font-medium flex-grow">{{ message }}</div>
-                        <button onclick="document.getElementById('flash-{{ loop.index }}').remove()" class="ml-auto opacity-70 hover:opacity-100 transition-opacity">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-    </div>
+    <!-- Flash Messages via Toast -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <script>
+                document.addEventListener("DOMContentLoaded", () => {
+                    {% for category, message in messages %}
+                        (function() {
+                            let category = {{ category|tojson }};
+                            let message = {{ message|tojson }};
+                            let toastType = 'info';
+                            if (category === 'error') {
+                                toastType = 'error';
+                            } else if (category === 'success') {
+                                toastType = 'success';
+                            }
+                            if (typeof window.showToast === 'function') {
+                                window.showToast(message, toastType);
+                            }
+                        })();
+                    {% endfor %}
+                });
+            </script>
+        {% endif %}
+    {% endwith %}
 
     <!-- Main Content -->
     <main class="flex-grow flex flex-col max-w-screen-xl mx-auto w-full px-[1vw] py-6">
@@ -287,7 +295,45 @@
 
         const initSpacing = localStorage.getItem('typopulse-spacing') || 'normal';
         applyGlobalSpacing(initSpacing);
+
+        // Floating Toast Notification system helper
+        window.showToast = function(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-2xl border backdrop-blur-xl shadow-2xl transition-all duration-300 translate-x-12 opacity-0 pointer-events-auto max-w-sm text-xs font-semibold`;
+            
+            if (type === 'success') {
+                toast.className += ' bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
+                toast.innerHTML = `<i class="fa-solid fa-circle-check text-sm flex-shrink-0"></i><span>${message}</span>`;
+            } else if (type === 'error') {
+                toast.className += ' bg-red-500/10 border-red-500/30 text-red-400';
+                toast.innerHTML = `<i class="fa-solid fa-circle-exclamation text-sm flex-shrink-0"></i><span>${message}</span>`;
+            } else {
+                toast.className += ' bg-blue-500/10 border-blue-500/30 text-blue-400';
+                toast.innerHTML = `<i class="fa-solid fa-circle-info text-sm flex-shrink-0"></i><span>${message}</span>`;
+            }
+            
+            container.appendChild(toast);
+            
+            // Trigger entry transition
+            setTimeout(() => {
+                toast.classList.remove('translate-x-12', 'opacity-0');
+            }, 10);
+            
+            // Auto-remove toast
+            setTimeout(() => {
+                toast.classList.add('translate-x-12', 'opacity-0');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 4000);
+        };
     </script>
+
+    <!-- Global Toast Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[9999] flex flex-col-reverse gap-3 pointer-events-none"></div>
 
     {% block scripts %}{% endblock %}
 </body>
