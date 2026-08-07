@@ -592,6 +592,7 @@ function handleSpecialKeys(e) {
     
     // Go back to previous word on Backspace if current word input is empty
     if (e.key === "Backspace" && typingInput.value === "") {
+        e.preventDefault();
         goBackToPreviousWord();
     }
 }
@@ -935,7 +936,8 @@ function endTest() {
     renderLiveChart();
     
     // Post to database
-    saveResultToDB(finalWpm, finalAccuracy, testDuration, activeMode);
+    const savedMode = activeMode === 'time' ? `time_${selectedTime}` : `words_${selectedWordsLimit}`;
+    saveResultToDB(finalWpm, finalAccuracy, testDuration, savedMode);
 }
 
 // AJAX post results

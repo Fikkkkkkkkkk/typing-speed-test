@@ -25,13 +25,73 @@ def dashboard():
     
     # Calculate additional user statistics
     test_completed = total_tests
-    test_started = max(current_user.started_tests, test_completed)
+    
+    # Ensure started_tests is at least test_completed
+    if current_user.started_tests < test_completed:
+        current_user.started_tests = test_completed
+        db.session.commit()
+        
+    test_started = current_user.started_tests
     
     total_seconds = sum(r.duration for r in results)
     minutes = total_seconds // 60
     seconds = total_seconds % 60
     test_time_str = f"{minutes}m {seconds}s" if minutes > 0 else f"{seconds}s"
     
+    # Personal bests by category
+    pb_time_15 = {"wpm": 0, "accuracy": 0}
+    pb_time_30 = {"wpm": 0, "accuracy": 0}
+    pb_time_60 = {"wpm": 0, "accuracy": 0}
+    pb_time_120 = {"wpm": 0, "accuracy": 0}
+    
+    pb_words_10 = {"wpm": 0, "accuracy": 0}
+    pb_words_25 = {"wpm": 0, "accuracy": 0}
+    pb_words_50 = {"wpm": 0, "accuracy": 0}
+    pb_words_100 = {"wpm": 0, "accuracy": 0}
+    
+    for r in results:
+        mode_str = r.mode.lower()
+        if 'time' in mode_str:
+            tgt_time = r.duration
+            if '_' in mode_str:
+                try:
+                    tgt_time = int(mode_str.split('_')[1])
+                except ValueError:
+                    pass
+            
+            if tgt_time == 15:
+                if r.wpm > pb_time_15["wpm"] or (r.wpm == pb_time_15["wpm"] and r.accuracy > pb_time_15["accuracy"]):
+                    pb_time_15 = {"wpm": round(r.wpm, 1), "accuracy": round(r.accuracy, 1)}
+            elif tgt_time == 30:
+                if r.wpm > pb_time_30["wpm"] or (r.wpm == pb_time_30["wpm"] and r.accuracy > pb_time_30["accuracy"]):
+                    pb_time_30 = {"wpm": round(r.wpm, 1), "accuracy": round(r.accuracy, 1)}
+            elif tgt_time == 60:
+                if r.wpm > pb_time_60["wpm"] or (r.wpm == pb_time_60["wpm"] and r.accuracy > pb_time_60["accuracy"]):
+                    pb_time_60 = {"wpm": round(r.wpm, 1), "accuracy": round(r.accuracy, 1)}
+            elif tgt_time == 120:
+                if r.wpm > pb_time_120["wpm"] or (r.wpm == pb_time_120["wpm"] and r.accuracy > pb_time_120["accuracy"]):
+                    pb_time_120 = {"wpm": round(r.wpm, 1), "accuracy": round(r.accuracy, 1)}
+        elif 'words' in mode_str:
+            word_count = None
+            if '_' in mode_str:
+                try:
+                    word_count = int(mode_str.split('_')[1])
+                except ValueError:
+                    pass
+            
+            if word_count == 10:
+                if r.wpm > pb_words_10["wpm"] or (r.wpm == pb_words_10["wpm"] and r.accuracy > pb_words_10["accuracy"]):
+                    pb_words_10 = {"wpm": round(r.wpm, 1), "accuracy": round(r.accuracy, 1)}
+            elif word_count == 25:
+                if r.wpm > pb_words_25["wpm"] or (r.wpm == pb_words_25["wpm"] and r.accuracy > pb_words_25["accuracy"]):
+                    pb_words_25 = {"wpm": round(r.wpm, 1), "accuracy": round(r.accuracy, 1)}
+            elif word_count == 50:
+                if r.wpm > pb_words_50["wpm"] or (r.wpm == pb_words_50["wpm"] and r.accuracy > pb_words_50["accuracy"]):
+                    pb_words_50 = {"wpm": round(r.wpm, 1), "accuracy": round(r.accuracy, 1)}
+            elif word_count == 100:
+                if r.wpm > pb_words_100["wpm"] or (r.wpm == pb_words_100["wpm"] and r.accuracy > pb_words_100["accuracy"]):
+                    pb_words_100 = {"wpm": round(r.wpm, 1), "accuracy": round(r.accuracy, 1)}
+                    
     return render_template(
         'dashboard.html', 
         results=results, 
@@ -42,7 +102,15 @@ def dashboard():
         pb_accuracy=round(pb_accuracy, 1),
         test_started=test_started,
         test_completed=test_completed,
-        test_time=test_time_str
+        test_time=test_time_str,
+        pb_time_15=pb_time_15,
+        pb_time_30=pb_time_30,
+        pb_time_60=pb_time_60,
+        pb_time_120=pb_time_120,
+        pb_words_10=pb_words_10,
+        pb_words_25=pb_words_25,
+        pb_words_50=pb_words_50,
+        pb_words_100=pb_words_100
     )
 
 @main_bp.route('/api/words')
@@ -99,6 +167,13 @@ def save_test():
         )
         db.session.add(new_result)
         db.session.commit()
+        
+        # Ensure started_tests is at least the updated completed count
+        total_completed = TestResult.query.filter_by(user_id=current_user.id).count()
+        if current_user.started_tests < total_completed:
+            current_user.started_tests = total_completed
+            db.session.commit()
+            
         return jsonify({'status': 'success', 'message': 'Result saved successfully!'})
     except Exception as e:
         db.session.rollback()
